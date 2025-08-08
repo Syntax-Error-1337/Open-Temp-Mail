@@ -1,0 +1,25 @@
+name = "temp-mail-worker"
+main = "src/index.js"
+compatibility_date = "2024-01-01"
+
+# D1 数据库绑定
+[[d1_databases]]
+binding = "TEMP_MAIL_DB"
+database_name = "maill_free_db"
+database_id = "your-database-id-here"
+
+# 环境变量
+[vars]
+MAIL_DOMAIN = "temp.example.com"
+
+# 生产环境配置
+[env.production]
+name = "temp-mail-worker-prod"
+
+[env.production.vars]
+MAIL_DOMAIN = "your-domain.com"
+
+# 路由配置（可选）
+[[routes]]
+pattern = "temp.example.com/*"
+zone_name = "example.com"
