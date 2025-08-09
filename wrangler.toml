@@ -1,25 +1,25 @@
-name = "temp-mail-worker"
+name = "mailfree"
 main = "src/index.js"
 compatibility_date = "2024-01-01"
 
 # D1 数据库绑定
 [[d1_databases]]
 binding = "TEMP_MAIL_DB"
-database_name = "maill_free_db"
-database_id = "your-database-id-here"
+database_name = "maill_free_db" #你的d1数据库名称
+database_id = "c82663ac-62b6-4ba6-be81-cbe297f2a3dd" # 你的database_id
 
 # 环境变量
-[vars]
-MAIL_DOMAIN = "temp.example.com"
 
-# 生产环境配置
-[env.production]
-name = "temp-mail-worker-prod"
+# 静态资源目录（Workers + Assets）
+[assets]
+directory = "public"
+# 显式指定绑定名，确保在 Worker 中通过 env.ASSETS 可用
+binding = "ASSETS"
 
-[env.production.vars]
-MAIL_DOMAIN = "your-domain.com"
 
-# 路由配置（可选）
-[[routes]]
-pattern = "temp.example.com/*"
-zone_name = "example.com"
+# wrangler.toml (wrangler v3.88.0^) 日志服务
+# [observability.logs]
+# enabled = true
+
+
+
