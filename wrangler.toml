@@ -10,7 +10,12 @@ database_id = "c82663ac-62b6-4ba6-be81-cbe297f2a3dd" # 你的database_id
 
 # 环境变量
 [vars]
-
+MAIL_DOMAIN = "dding.asia,iding.asia,dinging.top"
+ADMIN_PASSWORD = "123654789"
+JWT_TOKENGUEST_PASSWORD = "vncvuiyes64589djgaoppecklfd"
+JWT_TOKEN = "vnfjfjd135484ffjlidaoppecklfd"
+GUEST_PASSWORD = "admin" 
+RESEND_API_KEY = "re_bYvuvicB_ELFVgei3LWABeHnYU735SPhA"
 
 # 静态资源目录（Workers + Assets）
 [assets]
