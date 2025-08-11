@@ -1,5 +1,5 @@
 name = "mailfree"
-main = "src/index.js"
+main = "src/server.js"
 compatibility_date = "2024-01-01"
 
 # D1 数据库绑定
