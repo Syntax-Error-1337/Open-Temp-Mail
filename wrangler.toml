@@ -1,4 +1,5 @@
-name = "mailfree"
+# name = "mailfree"
+name = "mail-exhibit"
 main = "src/server.js"
 compatibility_date = "2024-01-01"
 
@@ -6,7 +7,7 @@ compatibility_date = "2024-01-01"
 [[d1_databases]]
 binding = "TEMP_MAIL_DB"
 database_name = "maill_free_db" #你的d1数据库名称
-database_id = "sss" # 你的database_id
+database_id = "c82663ac-62b6-4ba6-be81-cbe297f2a3dd" # 你的database_id
 
 # 环境变量
 [vars]
