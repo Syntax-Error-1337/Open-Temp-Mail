@@ -1,5 +1,5 @@
-# name = "mailfree"
-name = "mail-exhibit"
+name = "mailfree"
+# name = "mail-exhibit"
 main = "src/server.js"
 compatibility_date = "2024-01-01"
 
