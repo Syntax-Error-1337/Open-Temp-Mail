@@ -12,13 +12,17 @@ database_id = "c82663ac-62b6-4ba6-be81-cbe297f2a3dd" # 你的database_id
 # 环境变量
 [vars]
 
-
 # 静态资源目录（Workers + Assets）
 [assets]
 directory = "public"
 # 显式指定绑定名，确保在 Worker 中通过 env.ASSETS 可用
 binding = "ASSETS"
 
+
+# R2 存储桶绑定（用于保存完整 EML 内容）
+[[r2_buckets]]
+binding = "MAIL_EML"
+bucket_name = "mail-eml"
 
 # wrangler.toml (wrangler v3.88.0^) 日志服务
 # [observability.logs]
