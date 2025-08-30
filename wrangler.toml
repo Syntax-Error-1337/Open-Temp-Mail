@@ -12,6 +12,8 @@ database_id = "c82663ac-62b6-4ba6-be81-cbe297f2a3dd" # 你的database_id
 # 环境变量
 [vars]
 
+
+
 # 静态资源目录（Workers + Assets）
 [assets]
 directory = "public"
