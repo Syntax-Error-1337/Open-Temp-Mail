@@ -8,21 +8,10 @@ compatibility_date = "2024-01-01"
 binding = "TEMP_MAIL_DB"
 database_name = "maill_free_db" #你的d1数据库名称
 database_id = "c82663ac-62b6-4ba6-be81-cbe297f2a3dd" # 你的database_id
-
+# 登录会话过期时间（单位：天，默认7天）
 # 环境变量
 [vars]
-ADMIN_NAME="iding"
-ADMIN_PASSWORD="asdfgh"
-GUEST_PASSWORD="adminasdawawdwa"
-JWT_TOKEN="fjiwaiv23164s4f6df6wfdx"
-JWT_TOKENGUEST_PASSWORD="fzsjfizw874984esfu8df7sr3"
-# 登录会话过期时间（单位：天，默认7天）
-SESSION_EXPIRE_DAYS="7"
 # FORWARD_RULES="[{"prefix":"vip","email":"a@example.com"},{"prefix":"*","email":"2141083706@qq.com"}]"
-# MAIL_DOMAIN="idinging.com,iding.me,dding.asia,iding.asia,dinging.top,iding.qzz.io,12138.qzz.io,iding.cloudns.ch,iding.x10.mx,iding.elementfx.com,iding.x10host.com,izhou.x10.mx,952405.dpdns.org,"
-MAIL_DOMAIN="example.com,abc.ef"
-RESEND_API_KEY="dinging.top=re_ahF44aPK_2SERJuTLxcN8t86ChXXYpcBY,iding.qzz.io=re_J2fKFbBW_2xYbv8cnDLpqnRtcx5FDHBuh,iding.asia=re_3KH4SQ6M_KkSSbvAvx9QCYCMGGXzqUWHK"
-
 
 
 # 静态资源目录（Workers + Assets）
