@@ -2,12 +2,13 @@ import { useState, useEffect } from 'react';
 import { apiFetch } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Trash2, UserPlus, Edit, Shield, User } from 'lucide-react';
+import { Trash2, UserPlus, Edit, Shield, User, Mail } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import toast from 'react-hot-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Loader2 } from 'lucide-react';
+import { UserMailboxesDialog } from './UserMailboxesDialog';
 
 interface UserData {
     id: number;
@@ -23,6 +24,7 @@ export function UserList() {
     const [users, setUsers] = useState<UserData[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [isCreateOpen, setIsCreateOpen] = useState(false);
+    const [managingMailboxesUser, setManagingMailboxesUser] = useState<UserData | null>(null);
 
     const fetchUsers = async () => {
         setIsLoading(true);
@@ -93,6 +95,15 @@ export function UserList() {
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-2">
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() => setManagingMailboxesUser(u)}
+                                            title="Manage Mailboxes"
+                                        >
+                                            <Mail className="h-4 w-4 mr-2" />
+                                            Mailboxes
+                                        </Button>
                                         <Button variant="ghost" size="icon" onClick={() => setEditingUser(u)}>
                                             <Edit className="h-4 w-4" />
                                         </Button>
@@ -119,6 +130,17 @@ export function UserList() {
                     open={!!editingUser}
                     onOpenChange={(open) => !open && setEditingUser(null)}
                     onSuccess={() => { setEditingUser(null); fetchUsers(); }}
+                />
+            )}
+            {managingMailboxesUser && (
+                <UserMailboxesDialog
+                    user={managingMailboxesUser}
+                    open={!!managingMailboxesUser}
+                    onOpenChange={(open) => {
+                        if (!open) setManagingMailboxesUser(null);
+                        // Refresh users to update counts if needed
+                        if (!open) fetchUsers();
+                    }}
                 />
             )}
         </Card>

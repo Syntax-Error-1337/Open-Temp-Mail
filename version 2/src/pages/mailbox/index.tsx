@@ -1,12 +1,16 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { apiFetch } from '@/lib/api';
 import { Button } from '@/components/ui/button';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import { Trash2, RefreshCw, MailOpen, Mail } from 'lucide-react';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Trash2, RefreshCw, MailOpen, Mail, Search, KeyRound, Loader2 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import toast from 'react-hot-toast';
 import { cn } from '@/lib/utils';
+import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
+import { ChangePasswordDialog } from './ChangePasswordDialog';
 
 interface EmailSummary {
     id: number;
@@ -14,30 +18,36 @@ interface EmailSummary {
     subject: string;
     preview: string;
     created_at: string;
-    is_read?: boolean; // Optimistic update
+    is_read?: boolean;
 }
 
 interface EmailDetail extends EmailSummary {
     text?: string;
     html?: string;
     to_addrs: string;
+    download?: string;
 }
 
 export default function Mailbox() {
-    const { user } = useAuth();
+    const { user: _ } = useAuth();
     const [emails, setEmails] = useState<EmailSummary[]>([]);
     const [selectedEmail, setSelectedEmail] = useState<EmailDetail | null>(null);
     const [isLoadingList, setIsLoadingList] = useState(false);
     const [isLoadingDetail, setIsLoadingDetail] = useState(false);
-    const [mailboxAddress] = useState(user?.mailboxAddress || user?.username || '');
+
+    // New features state
+    const [searchQuery, setSearchQuery] = useState('');
+    const [autoRefresh, setAutoRefresh] = useState(false);
+    const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
 
     const fetchEmails = useCallback(async (silent = false) => {
         if (!silent) setIsLoadingList(true);
         try {
-            // If mailbox user, API handles context. If admin/user, we might need param.
-            // For now, assume context is enough or passed in query if needed.
-            const data = await apiFetch<any>(`/api/emails?limit=50&offset=0`);
-            if (data.success && Array.isArray(data.results)) {
+            // Fetch more emails to better support client-side search
+            const data = await apiFetch<any>(`/api/emails?limit=100&offset=0`);
+            if (data && Array.isArray(data)) { // worker returns array directly for /api/emails
+                setEmails(data);
+            } else if (data && Array.isArray(data.results)) { // fallback if structure changes
                 setEmails(data.results);
             }
         } catch (error) {
@@ -50,27 +60,36 @@ export default function Mailbox() {
 
     useEffect(() => {
         fetchEmails();
-        const interval = setInterval(() => fetchEmails(true), 15000); // Poll every 15s
-        return () => clearInterval(interval);
     }, [fetchEmails]);
+
+    // Auto-refresh logic
+    useEffect(() => {
+        let interval: any;
+        if (autoRefresh) {
+            interval = setInterval(() => fetchEmails(true), 15000);
+        }
+        return () => clearInterval(interval);
+    }, [autoRefresh, fetchEmails]);
+
+    // Filter emails
+    const filteredEmails = useMemo(() => {
+        if (!searchQuery.trim()) return emails;
+        const query = searchQuery.toLowerCase();
+        return emails.filter(email =>
+            email.subject.toLowerCase().includes(query) ||
+            email.sender.toLowerCase().includes(query) ||
+            email.preview?.toLowerCase().includes(query)
+        );
+    }, [emails, searchQuery]);
 
     const handleSelectEmail = async (id: number) => {
         setIsLoadingDetail(true);
         setSelectedEmail(null);
         try {
             const data = await apiFetch<any>(`/api/email/${id}`);
-            if (data.success && data.message) { // message holds the email object based on original code
-                // Wait, checking original code: 
-                // router.get('/api/email/:id', ...) -> returns JSON with the message object directly or inside data?
-                // Let's assume standard wrapper: data.data or similar.
-                // Actually original code `handleEmailsApi` returns `results[0]` for list, but for single?
-                // Let's check `src/api/emails.js` logic later. Assuming `data.success` and `data.data` or `data` is the object.
-                // Based on `api.ts` wrapper, response is parsed JSON.
-                // Let's assume `data` contains the email fields directly or in `data`.
-                // Re-checking `handleEmailsApi`:
-                // It returns `Response.json({ success: true, ...result })`.
-                setSelectedEmail(data as EmailDetail);
-            } else if (data.id) {
+            if (data) {
+                // Mark as read in local state
+                setEmails(prev => prev.map(e => e.id === id ? { ...e, is_read: true } : e));
                 setSelectedEmail(data as EmailDetail);
             }
         } catch (error) {
@@ -98,49 +117,85 @@ export default function Mailbox() {
         <div className="h-[calc(100vh-4rem)] flex flex-col md:flex-row p-4 gap-4">
             {/* Email List */}
             <Card className={cn("flex flex-col md:w-1/3 h-full", selectedEmail ? "hidden md:flex" : "flex")}>
-                <CardHeader className="p-4 border-b">
+                <CardHeader className="p-4 border-b space-y-3">
                     <div className="flex items-center justify-between">
                         <CardTitle className="text-lg">Inbox</CardTitle>
-                        <Button variant="ghost" size="icon" onClick={() => fetchEmails()}>
-                            <RefreshCw className={cn("h-4 w-4", isLoadingList && "animate-spin")} />
-                        </Button>
+                        <div className="flex gap-1">
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => setIsChangePasswordOpen(true)}
+                                title="Change Password"
+                            >
+                                <KeyRound className="h-4 w-4" />
+                            </Button>
+                            <Button variant="ghost" size="icon" onClick={() => fetchEmails()}>
+                                <RefreshCw className={cn("h-4 w-4", isLoadingList && "animate-spin")} />
+                            </Button>
+                        </div>
                     </div>
-                    <CardDescription className="truncate">{mailboxAddress}</CardDescription>
+
+                    <div className="space-y-2">
+                        <div className="relative">
+                            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                            <Input
+                                placeholder="Search emails..."
+                                className="pl-8 h-9"
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                            />
+                        </div>
+                        <div className="flex items-center justify-between text-xs text-muted-foreground">
+                            <span>{filteredEmails.length} messages</span>
+                            <div className="flex items-center space-x-2">
+                                <Checkbox
+                                    id="auto-refresh"
+                                    checked={autoRefresh}
+                                    onCheckedChange={(c) => setAutoRefresh(!!c)}
+                                />
+                                <Label htmlFor="auto-refresh">Auto-refresh</Label>
+                            </div>
+                        </div>
+                    </div>
                 </CardHeader>
                 <div className="flex-1 overflow-y-auto p-2 space-y-2">
-                    {emails.length === 0 && !isLoadingList && (
+                    {filteredEmails.length === 0 && !isLoadingList && (
                         <div className="text-center py-10 text-muted-foreground">
                             <Mail className="h-10 w-10 mx-auto mb-2 opacity-20" />
-                            <p>No emails yet</p>
+                            <p>{searchQuery ? 'No matching emails' : 'No emails yet'}</p>
                         </div>
                     )}
-                    {emails.map((email) => (
+                    {filteredEmails.map((email) => (
                         <div
                             key={email.id}
                             onClick={() => handleSelectEmail(email.id)}
                             className={cn(
-                                "p-3 rounded-lg border cursor-pointer transition-colors hover:bg-accent",
-                                selectedEmail?.id === email.id ? "bg-accent border-primary/50" : "bg-card"
+                                "p-3 rounded-lg border cursor-pointer transition-colors hover:bg-accent relative group",
+                                selectedEmail?.id === email.id ? "bg-accent border-primary/50" : "bg-card",
+                                !email.is_read && "font-semibold bg-muted/30"
                             )}
                         >
+                            {!email.is_read && (
+                                <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-blue-500" />
+                            )}
                             <div className="flex justify-between items-start mb-1">
-                                <span className="font-semibold truncate w-2/3">{email.sender}</span>
+                                <span className="truncate w-2/3">{email.sender}</span>
                                 <span className="text-xs text-muted-foreground whitespace-nowrap">
                                     {formatDistanceToNow(new Date(email.created_at), { addSuffix: true })}
                                 </span>
                             </div>
-                            <div className="font-medium text-sm truncate mb-1">{email.subject}</div>
-                            <div className="text-xs text-muted-foreground line-clamp-2">
+                            <div className="text-sm truncate mb-1">{email.subject}</div>
+                            <div className="text-xs text-muted-foreground line-clamp-2 font-normal">
                                 {email.preview}
                             </div>
-                            <div className="mt-2 flex justify-end">
+                            <div className="mt-1 flex justify-end opacity-0 group-hover:opacity-100 transition-opacity">
                                 <Button
                                     variant="ghost"
                                     size="icon"
                                     className="h-6 w-6 text-muted-foreground hover:text-destructive"
                                     onClick={(e) => handleDelete(e, email.id)}
                                 >
-                                    <Trash2 className="h-4 w-4" />
+                                    <Trash2 className="h-3 w-3" />
                                 </Button>
                             </div>
                         </div>
@@ -152,7 +207,7 @@ export default function Mailbox() {
             <Card className={cn("flex-1 h-full flex flex-col", !selectedEmail ? "hidden md:flex" : "flex")}>
                 {isLoadingDetail ? (
                     <div className="flex-1 flex items-center justify-center">
-                        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
                     </div>
                 ) : !selectedEmail ? (
                     <div className="flex-1 flex items-center justify-center text-muted-foreground">
@@ -168,16 +223,21 @@ export default function Mailbox() {
                                 <div className="space-y-1">
                                     <CardTitle className="text-lg">{selectedEmail.subject}</CardTitle>
                                     <div className="text-sm text-muted-foreground">
-                                        From: <span className="text-foreground">{selectedEmail.sender}</span>
+                                        From: <span className="text-foreground select-text">{selectedEmail.sender}</span>
                                     </div>
                                     <div className="text-sm text-muted-foreground">
-                                        To: <span className="text-foreground">{selectedEmail.to_addrs}</span>
+                                        To: <span className="text-foreground select-text">{selectedEmail.to_addrs}</span>
                                     </div>
                                     <div className="text-xs text-muted-foreground">
                                         {new Date(selectedEmail.created_at).toLocaleString()}
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-2">
+                                    {selectedEmail.download && (
+                                        <Button variant="outline" size="sm" asChild>
+                                            <a href={selectedEmail.download} download>Download EML</a>
+                                        </Button>
+                                    )}
                                     <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setSelectedEmail(null)}>
                                         <span className="sr-only">Back</span>
                                         X
@@ -188,9 +248,8 @@ export default function Mailbox() {
                                 </div>
                             </div>
                         </CardHeader>
-                        <CardContent className="flex-1 p-0 overflow-hidden">
-                            <div className="h-full w-full bg-white text-black p-4 overflow-auto">
-                                {/* Safety: Should ideally use a sanitized iframe or DOMPurify. For now, simple dangerouslySetInnerHTML inside a sandbox container request is safer but React handles basic XSS. We need to be careful with full HTML emails. */}
+                        <CardContent className="flex-1 p-0 overflow-hidden relative">
+                            <div className="h-full w-full bg-white text-black p-4 overflow-auto select-text">
                                 {selectedEmail.html ? (
                                     <div dangerouslySetInnerHTML={{ __html: selectedEmail.html }} className="prose max-w-none" />
                                 ) : (
@@ -201,6 +260,11 @@ export default function Mailbox() {
                     </>
                 )}
             </Card>
+
+            <ChangePasswordDialog
+                open={isChangePasswordOpen}
+                onOpenChange={setIsChangePasswordOpen}
+            />
         </div>
     );
 }
