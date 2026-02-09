@@ -6,6 +6,10 @@ A modern, responsive frontend for the Freemail application, built with React, Vi
 - **Modern UI**: Clean interface built with Tailwind CSS v4.
 - **Authentication**: Secure login for Admins, Users, and Mailbox accounts.
 - **Dashboard**: Overview of system status and mailboxes.
+- **Mailbox Management**: 
+    - **Favorites**: Star important mailboxes for quick access.
+    - **Filtering**: Easily filter by All, Favorites, or Forwarding status.
+    - **Forwarding**: Set up auto-forwarding rules for mailboxes.
 - **Mailbox**: Real-time email listing and reading with sanitized HTML view.
 - **Responsive**: Fully optimized for mobile and desktop.
 
@@ -33,8 +37,10 @@ The frontend is configured to proxy API requests to `http://localhost:8787`.
 To change this, edit `vite.config.ts`.
 
 ## Deployment
+See [DEPLOY.md](DEPLOY.md) for detailed deployment instructions using Cloudflare Workers.
+
 To build for production:
 ```bash
 npm run build
 ```
-The output will be in the `dist` directory.
+The output will be in the `dist` directory, which is served by the Cloudflare Worker.
