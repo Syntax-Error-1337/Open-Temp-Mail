@@ -1,11 +1,11 @@
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
     success: boolean;
     message?: string;
     data?: T;
-    [key: string]: any;
+    [key: string]: unknown;
 }
 
-export async function apiFetch<T = any>(
+export async function apiFetch<T = unknown>(
     endpoint: string,
     options: RequestInit = {}
 ): Promise<T> {

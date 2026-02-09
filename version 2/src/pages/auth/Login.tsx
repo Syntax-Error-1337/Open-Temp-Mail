@@ -18,8 +18,9 @@ export default function Login() {
         try {
             await login({ username, password });
             toast.success('Login successful');
-        } catch (error: any) {
-            toast.error(error.message || 'Login failed');
+        } catch (error) {
+            const msg = error instanceof Error ? error.message : 'Login failed';
+            toast.error(msg);
         } finally {
             setIsLoading(false);
         }

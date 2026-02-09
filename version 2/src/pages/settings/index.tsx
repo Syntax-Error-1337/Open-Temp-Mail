@@ -21,7 +21,16 @@ export default function Settings() {
     );
 }
 
-function MailboxSettings({ user }: { user: any }) {
+
+interface SettingsUser {
+    id?: number;
+    username: string;
+    role: string;
+    mailboxAddress?: string;
+    userId?: number;
+}
+
+function MailboxSettings({ user }: { user: SettingsUser }) {
     const [isLoading, setIsLoading] = useState(true);
     const [forwardTo, setForwardTo] = useState('');
     const [mailboxId, setMailboxId] = useState<number | null>(null);
@@ -30,11 +39,10 @@ function MailboxSettings({ user }: { user: any }) {
         const fetchInfo = async () => {
             if (!user.mailboxAddress) return;
             try {
-                const res = await apiFetch(`/api/mailbox/info?address=${encodeURIComponent(user.mailboxAddress)}`);
+                const res = await apiFetch<{ forward_to?: string, id: number }>(`/api/mailbox/info?address=${encodeURIComponent(user.mailboxAddress)}`);
                 setForwardTo(res.forward_to || '');
                 setMailboxId(res.id);
-            } catch (error) {
-                console.error('Failed to fetch mailbox info', error);
+            } catch {
                 toast.error('Failed to load settings');
             } finally {
                 setIsLoading(false);
@@ -51,7 +59,7 @@ function MailboxSettings({ user }: { user: any }) {
                 body: JSON.stringify({ mailbox_id: mailboxId, forward_to: forwardTo })
             });
             toast.success('Forwarding settings saved');
-        } catch (error) {
+        } catch {
             toast.error('Failed to save forwarding settings');
         }
     };
@@ -129,8 +137,9 @@ function MailboxPasswordForm() {
             setCurrentPassword('');
             setNewPassword('');
             setConfirmPassword('');
-        } catch (error: any) {
-            toast.error(error.message || 'Failed to change password');
+        } catch (error) {
+            const msg = error instanceof Error ? error.message : 'Failed to change password';
+            toast.error(msg);
         } finally {
             setIsSubmitting(false);
         }
@@ -173,7 +182,7 @@ function MailboxPasswordForm() {
     );
 }
 
-function UserSettings({ user }: { user: any }) {
+function UserSettings({ user }: { user: SettingsUser }) {
     const [password, setPassword] = useState('');
     const [isSaving, setIsSaving] = useState(false);
 
@@ -184,13 +193,13 @@ function UserSettings({ user }: { user: any }) {
         }
         setIsSaving(true);
         try {
-            await apiFetch(`/api/users/${user.userId}`, {
+            await apiFetch(`/api/users/${user.userId || user.id}`, {
                 method: 'PATCH',
                 body: JSON.stringify({ password })
             });
             toast.success('Password updated successfully');
             setPassword('');
-        } catch (error) {
+        } catch {
             toast.error('Failed to update password');
         } finally {
             setIsSaving(false);

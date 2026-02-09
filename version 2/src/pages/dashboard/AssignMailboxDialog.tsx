@@ -30,7 +30,7 @@ export function AssignMailboxDialog({ open, onOpenChange, user, onSuccess }: Ass
                 setDomains(data);
                 setDomain(data[0]);
             }
-        } catch (_) { }
+        } catch { /* ignore */ }
     }, []);
 
     useEffect(() => {
@@ -68,8 +68,9 @@ export function AssignMailboxDialog({ open, onOpenChange, user, onSuccess }: Ass
             toast.success(`Mailbox assigned to ${user.username}`);
             onSuccess();
             onOpenChange(false);
-        } catch (error: any) {
-            toast.error(error.message || 'Failed to assign mailbox');
+        } catch (error) {
+            const msg = error instanceof Error ? error.message : 'Failed to assign mailbox';
+            toast.error(msg);
         } finally {
             setIsLoading(false);
         }

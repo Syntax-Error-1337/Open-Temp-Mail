@@ -29,7 +29,11 @@ interface EmailDetail extends EmailSummary {
 }
 
 export default function Mailbox() {
-    const { user: _ } = useAuth();
+    useAuth(); // We just need the hook to run, or we can remove it if we don't use the return. 
+    // Actually the original code accessed user.mailboxAddress, but now we don't.
+    // But usually we keep it to ensure context is valid or for redirection if protected route.
+    // The lint says '_' is assigned but never used.
+    // Let's just call useAuth() without destructuring if we don't use the user object.
     const [emails, setEmails] = useState<EmailSummary[]>([]);
     const [selectedEmail, setSelectedEmail] = useState<EmailDetail | null>(null);
     const [isLoadingList, setIsLoadingList] = useState(false);
@@ -44,11 +48,22 @@ export default function Mailbox() {
         if (!silent) setIsLoadingList(true);
         try {
             // Fetch more emails to better support client-side search
-            const data = await apiFetch<any>(`/api/emails?limit=100&offset=0`);
-            if (data && Array.isArray(data)) { // worker returns array directly for /api/emails
-                setEmails(data);
-            } else if (data && Array.isArray(data.results)) { // fallback if structure changes
-                setEmails(data.results);
+            await apiFetch<unknown>(`/api/emails?limit=100&offset=0`); // Keeping 'any' for now or defining type if possible, but 'any' is easiest if structure varies.  
+            // Wait, I should try to fix 'any' if possible.
+            // The lint complained about apiFetch<any>.
+            // Let's use 'unknown' or a better type.
+            // But apiFetch<T> returns T.
+            // Let's define the expected response.
+            /* 
+               The worker returns either an array (if standard) or { results: ... } (if D1).
+               We handle both.
+            */
+            const response = await apiFetch<{ results?: EmailSummary[] } | EmailSummary[]>(`/api/emails?limit=100&offset=0`);
+
+            if (Array.isArray(response)) {
+                setEmails(response);
+            } else if (response && Array.isArray(response.results)) {
+                setEmails(response.results);
             }
         } catch (error) {
             console.error('Failed to fetch emails', error);
@@ -64,7 +79,7 @@ export default function Mailbox() {
 
     // Auto-refresh logic
     useEffect(() => {
-        let interval: any;
+        let interval: ReturnType<typeof setInterval>;
         if (autoRefresh) {
             interval = setInterval(() => fetchEmails(true), 15000);
         }
@@ -86,13 +101,13 @@ export default function Mailbox() {
         setIsLoadingDetail(true);
         setSelectedEmail(null);
         try {
-            const data = await apiFetch<any>(`/api/email/${id}`);
+            const data = await apiFetch<EmailDetail>(`/api/email/${id}`);
             if (data) {
                 // Mark as read in local state
                 setEmails(prev => prev.map(e => e.id === id ? { ...e, is_read: true } : e));
-                setSelectedEmail(data as EmailDetail);
+                setSelectedEmail(data);
             }
-        } catch (error) {
+        } catch {
             toast.error('Failed to load email content');
         } finally {
             setIsLoadingDetail(false);
@@ -108,7 +123,7 @@ export default function Mailbox() {
             toast.success('Email deleted');
             setEmails(emails.filter(em => em.id !== id));
             if (selectedEmail?.id === id) setSelectedEmail(null);
-        } catch (error) {
+        } catch {
             toast.error('Failed to delete email');
         }
     };

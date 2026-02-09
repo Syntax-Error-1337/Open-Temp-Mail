@@ -29,7 +29,7 @@ export function useSender() {
     const sendEmail = useCallback(async (payload: SendEmailPayload) => {
         setIsSending(true);
         try {
-            const res = await apiFetch<any>('/api/send', {
+            const res = await apiFetch<Record<string, unknown>>('/api/send', { // api return type is dynamic
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload),
@@ -38,11 +38,12 @@ export function useSender() {
                 toast.success('Email sent successfully');
                 return true;
             } else {
-                toast.error(res.error || 'Failed to send email');
+                toast.error(String(res.error) || 'Failed to send email');
                 return false;
             }
-        } catch (error: any) {
-            toast.error(error.message || 'Failed to send email');
+        } catch (error) {
+            const msg = error instanceof Error ? error.message : 'Failed to send email';
+            toast.error(msg);
             return false;
         } finally {
             setIsSending(false);

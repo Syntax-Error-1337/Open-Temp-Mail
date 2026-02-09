@@ -46,8 +46,9 @@ export function ChangePasswordDialog({ open, onOpenChange }: ChangePasswordDialo
             setCurrentPassword('');
             setNewPassword('');
             setConfirmPassword('');
-        } catch (error: any) {
-            toast.error(error.message || 'Failed to change password');
+        } catch (error) {
+            const msg = error instanceof Error ? error.message : 'Failed to change password';
+            toast.error(msg);
         } finally {
             setIsLoading(false);
         }

@@ -77,9 +77,10 @@ export function BatchActionModal({ open, onOpenChange, action, selectedMailboxes
             toast.success('Batch action completed successfully');
             onSuccess();
             onOpenChange(false);
-        } catch (error: any) {
+        } catch (error) {
             console.error('Batch action failed:', error);
-            toast.error(error.message || 'Batch action failed');
+            const msg = error instanceof Error ? error.message : 'Batch action failed';
+            toast.error(msg);
         } finally {
             setIsLoading(false);
         }

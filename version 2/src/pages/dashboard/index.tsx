@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { apiFetch } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -19,23 +19,24 @@ export default function Dashboard() {
     const isAdmin = user?.role === 'admin';
 
     // Fetch basic stats for overview
-    const fetchStats = async () => {
-        if (!isAdmin) return;
+    const fetchStats = useCallback(async () => {
+        if (!user || user.role !== 'admin') return;
         try {
             // Re-using mailboxes endpoint or dedicated stats endpoint if available
             // For now, let's just use the mailboxes endpoint to get total count
-            const data = await apiFetch<any>('/api/mailboxes?limit=1');
+            const data = await apiFetch<{ total: number }>('/api/mailboxes?limit=1');
             if (data && typeof data.total === 'number') {
                 setStats(s => ({ ...s, total: data.total }));
             }
-        } catch (error) {
+        } catch {
             console.error('Failed to fetch stats');
         }
-    };
+    }, [user]);
 
     useEffect(() => {
-        fetchStats();
-    }, [user]);
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        void fetchStats();
+    }, [fetchStats]);
 
     if (isMailboxUser) {
         return (

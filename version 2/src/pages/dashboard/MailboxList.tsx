@@ -50,7 +50,7 @@ export function MailboxList() {
         try {
             const data = await apiFetch<string[]>('/api/domains');
             if (Array.isArray(data)) setDomains(data);
-        } catch (_) { }
+        } catch { /* ignore */ }
     }, []);
 
     const fetchMailboxes = useCallback(async () => {
@@ -121,7 +121,7 @@ export function MailboxList() {
             toast.success('Mailbox deleted');
             fetchMailboxes();
             setSelectedIds(prev => prev.filter(i => i !== id));
-        } catch (error) {
+        } catch {
             toast.error('Failed to delete mailbox');
         }
     };
@@ -136,7 +136,7 @@ export function MailboxList() {
                 m.id === mailbox.id ? { ...m, is_favorite: !m.is_favorite } : m
             ));
             toast.success(mailbox.is_favorite ? 'Removed from favorites' : 'Added to favorites');
-        } catch (error) {
+        } catch {
             toast.error('Failed to update favorite status');
         }
     };
@@ -151,7 +151,7 @@ export function MailboxList() {
                 m.id === mailbox.id ? { ...m, can_login: !mailbox.can_login } : m
             ));
             toast.success(!mailbox.can_login ? 'Login enabled' : 'Login disabled');
-        } catch (error) {
+        } catch {
             toast.error('Failed to update login status');
         }
     };

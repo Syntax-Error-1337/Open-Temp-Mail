@@ -7,12 +7,14 @@ interface User {
     mailboxAddress?: string;
     can_send?: number;
     mailbox_limit?: number;
+    id?: number;
+    userId?: number;
 }
 
 interface AuthContextType {
     user: User | null;
     isLoading: boolean;
-    login: (data: any) => Promise<void>;
+    login: (data: Record<string, unknown>) => Promise<void>;
     logout: () => Promise<void>;
     checkSession: () => Promise<void>;
 }
@@ -31,7 +33,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             } else {
                 setUser(null);
             }
-        } catch (error) {
+        } catch {
             setUser(null);
         } finally {
             setIsLoading(false);
@@ -42,8 +44,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         checkSession();
     }, []);
 
-    const login = async (data: any) => {
-        const response = await apiFetch('/api/login', {
+    const login = async (data: Record<string, unknown>) => {
+        const response = await apiFetch<{ success: boolean; message?: string }>('/api/login', {
             method: 'POST',
             body: JSON.stringify(data),
         });
@@ -70,6 +72,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useAuth() {
     const context = useContext(AuthContext);
     if (context === undefined) {

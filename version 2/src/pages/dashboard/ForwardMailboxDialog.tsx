@@ -43,8 +43,9 @@ export function ForwardMailboxDialog({ mailbox, open, onOpenChange, onSuccess }:
             toast.success(target ? 'Forwarding set successfully' : 'Forwarding disabled');
             onSuccess(mailbox.id, target);
             onOpenChange(false);
-        } catch (error: any) {
-            toast.error(error.message || 'Failed to update forwarding settings');
+        } catch (error) {
+            const msg = error instanceof Error ? error.message : 'Failed to update forwarding settings';
+            toast.error(msg);
         } finally {
             setIsSubmitting(false);
         }

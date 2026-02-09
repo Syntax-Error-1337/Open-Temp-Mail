@@ -32,7 +32,7 @@ export function UserMailboxesDialog({ open, onOpenChange, user }: UserMailboxesD
             if (Array.isArray(data)) {
                 setMailboxes(data);
             }
-        } catch (error) {
+        } catch {
             console.error('Failed to fetch user mailboxes');
             toast.error('Failed to load mailboxes');
         } finally {
@@ -60,8 +60,9 @@ export function UserMailboxesDialog({ open, onOpenChange, user }: UserMailboxesD
             });
             toast.success('Mailbox unassigned');
             setMailboxes(prev => prev.filter(m => m.address !== address));
-        } catch (error: any) {
-            toast.error(error.message || 'Failed to unassign mailbox');
+        } catch (error) {
+            const msg = error instanceof Error ? error.message : 'Failed to unassign mailbox';
+            toast.error(msg);
         }
     };
 
