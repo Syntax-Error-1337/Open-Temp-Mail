@@ -130,17 +130,29 @@ export class AssetManager {
 
   async handleIllegalPath(request, env, JWT_TOKEN) {
     const url = new URL(request.url);
+    const pathname = url.pathname;
+
+    // SPA routes that should serve index.html
+    const spaRoutes = ['/dashboard', '/mailbox', '/login', '/send'];
+    const isSpaRoute = spaRoutes.some(route => pathname === route || pathname.startsWith(route + '/'));
+
+    if (isSpaRoute) {
+      // Serve index.html for SPA routes
+      const indexRequest = new Request(new URL('/', url).toString(), request);
+      return env.ASSETS.fetch(indexRequest);
+    }
+
     const payload = await resolveAuthPayload(request, JWT_TOKEN);
 
     if (payload !== false) {
       if (payload.role === 'mailbox') {
-        return Response.redirect(new URL('/html/mailbox.html', url).toString(), 302);
+        return Response.redirect(new URL('/mailbox', url).toString(), 302);
       } else {
         return Response.redirect(new URL('/', url).toString(), 302);
       }
     }
 
-    return Response.redirect(new URL('/templates/loading.html', url).toString(), 302);
+    return Response.redirect(new URL('/login', url).toString(), 302);
   }
 
   async checkProtectedPathAuth(request, JWT_TOKEN, url) {

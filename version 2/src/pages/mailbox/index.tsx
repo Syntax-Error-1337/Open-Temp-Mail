@@ -18,13 +18,13 @@ interface EmailSummary {
     sender: string;
     subject: string;
     preview: string;
-    created_at: string;
+    received_at: string;
     is_read?: boolean;
 }
 
 interface EmailDetail extends EmailSummary {
-    text?: string;
-    html?: string;
+    content?: string;
+    html_content?: string;
     to_addrs: string;
     download?: string;
 }
@@ -193,7 +193,7 @@ export default function Mailbox() {
                             <div className="flex justify-between items-start mb-1">
                                 <span className="truncate w-2/3">{email.sender}</span>
                                 <span className="text-xs text-muted-foreground whitespace-nowrap">
-                                    {formatDistanceToNow(new Date(email.created_at), { addSuffix: true })}
+                                    {formatDistanceToNow(new Date(email.received_at), { addSuffix: true })}
                                 </span>
                             </div>
                             <div className="text-sm truncate mb-1">{email.subject}</div>
@@ -241,7 +241,7 @@ export default function Mailbox() {
                                         To: <span className="text-foreground select-text">{selectedEmail.to_addrs}</span>
                                     </div>
                                     <div className="text-xs text-muted-foreground">
-                                        {new Date(selectedEmail.created_at).toLocaleString()}
+                                        {new Date(selectedEmail.received_at).toLocaleString()}
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-2">
@@ -262,10 +262,10 @@ export default function Mailbox() {
                         </CardHeader>
                         <CardContent className="flex-1 p-0 overflow-hidden relative">
                             <div className="h-full w-full bg-white text-black p-4 overflow-auto select-text">
-                                {selectedEmail.html ? (
-                                    <div dangerouslySetInnerHTML={{ __html: selectedEmail.html }} className="prose max-w-none" />
+                                {selectedEmail.html_content ? (
+                                    <div dangerouslySetInnerHTML={{ __html: selectedEmail.html_content }} className="prose max-w-none" />
                                 ) : (
-                                    <pre className="whitespace-pre-wrap font-sans">{selectedEmail.text}</pre>
+                                    <pre className="whitespace-pre-wrap font-sans">{selectedEmail.content}</pre>
                                 )}
                             </div>
                         </CardContent>
