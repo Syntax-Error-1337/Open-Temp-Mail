@@ -170,6 +170,20 @@ async function main() {
     run(`echo "${finalJwt}" | wrangler secret put JWT_TOKEN`);
     success('JWT_TOKEN set.');
 
+    const mailDomain = await ask('Enter your Mail Domain (e.g., example.com):');
+    if (mailDomain) {
+        // Update MAIL_DOMAIN in wrangler.toml (it's defined as an env var, not a secret)
+        wranglerConfig = fs.readFileSync(wranglerPath, 'utf-8');
+        const updatedConfig = wranglerConfig.replace(
+            /MAIL_DOMAIN\s*=\s*"[^"]*"/,
+            `MAIL_DOMAIN = "${mailDomain}"`
+        );
+        fs.writeFileSync(wranglerPath, updatedConfig);
+        success(`MAIL_DOMAIN set to '${mailDomain}' in wrangler.toml.`);
+    } else {
+        warn('MAIL_DOMAIN not set. You may need to configure this manually in wrangler.toml.');
+    }
+
 
     // 7. Deploy
     step('Building and Deploying...');

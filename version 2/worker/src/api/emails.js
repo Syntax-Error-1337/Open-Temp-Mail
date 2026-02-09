@@ -3,7 +3,7 @@
  * @module api/emails
  */
 
-import { getJwtPayload, errorResponse } from './helpers.js';
+import { getJwtPayload, isStrictAdmin, errorResponse } from './helpers.js';
 import { buildMockEmails, buildMockEmailDetail } from './mock.js';
 import { extractEmail } from '../utils/common.js';
 import { getMailboxIdByAddress } from '../db/index.js';
@@ -26,9 +26,56 @@ export async function handleEmailsApi(request, db, url, path, options) {
   // 获取邮件列表
   if (path === '/api/emails' && request.method === 'GET') {
     const mailbox = url.searchParams.get('mailbox');
+
+    // Allow admins to fetch all emails from all mailboxes
     if (!mailbox) {
-      return errorResponse('缺少 mailbox 参数', 400);
+      const payload = getJwtPayload(request, options);
+      const strictAdmin = isStrictAdmin(request, options);
+      const isAdmin = strictAdmin || payload?.role === 'admin';
+
+      if (!isAdmin) {
+        return errorResponse('缺少 mailbox 参数', 400);
+      }
+
+      // Fetch all emails from all mailboxes for admin
+      try {
+        if (isMock) {
+          return Response.json(buildMockEmails(6));
+        }
+
+        const limit = Math.min(parseInt(url.searchParams.get('limit') || '100', 10), 100);
+        const offset = parseInt(url.searchParams.get('offset') || '0', 10);
+
+        try {
+          const { results } = await db.prepare(`
+            SELECT m.id, m.sender, m.subject, m.received_at, m.is_read, m.preview, m.verification_code, mb.address as mailbox_address
+            FROM messages m
+            JOIN mailboxes mb ON m.mailbox_id = mb.id
+            ORDER BY m.received_at DESC
+            LIMIT ? OFFSET ?
+          `).bind(limit, offset).all();
+          return Response.json(results);
+        } catch (e) {
+          const { results } = await db.prepare(`
+            SELECT m.id, m.sender, m.subject, m.received_at, m.is_read, mb.address as mailbox_address,
+                   CASE WHEN m.content IS NOT NULL AND m.content <> ''
+                        THEN SUBSTR(m.content, 1, 120)
+                        ELSE SUBSTR(COALESCE(m.html_content, ''), 1, 120)
+                   END AS preview
+            FROM messages m
+            JOIN mailboxes mb ON m.mailbox_id = mb.id
+            ORDER BY m.received_at DESC
+            LIMIT ? OFFSET ?
+          `).bind(limit, offset).all();
+          return Response.json(results);
+        }
+      } catch (e) {
+        console.error('查询所有邮件失败:', e);
+        return errorResponse('查询邮件失败', 500);
+      }
     }
+
+    // Existing logic for specific mailbox
     try {
       if (isMock) {
         return Response.json(buildMockEmails(6));
@@ -36,7 +83,7 @@ export async function handleEmailsApi(request, db, url, path, options) {
       const normalized = extractEmail(mailbox).trim().toLowerCase();
       const mailboxId = await getMailboxIdByAddress(db, normalized);
       if (!mailboxId) return Response.json([]);
-      
+
       let timeFilter = '';
       let timeParam = [];
       if (isMailboxOnly) {
@@ -44,9 +91,9 @@ export async function handleEmailsApi(request, db, url, path, options) {
         timeFilter = ' AND received_at >= ?';
         timeParam = [twentyFourHoursAgo];
       }
-      
+
       const limit = Math.min(parseInt(url.searchParams.get('limit') || '20', 10), 50);
-      
+
       try {
         const { results } = await db.prepare(`
           SELECT id, sender, subject, received_at, is_read, preview, verification_code
@@ -83,16 +130,16 @@ export async function handleEmailsApi(request, db, url, path, options) {
       if (!idsParam) return Response.json([]);
       const ids = idsParam.split(',').map(s => parseInt(s, 10)).filter(n => Number.isInteger(n) && n > 0);
       if (!ids.length) return Response.json([]);
-      
+
       if (ids.length > 50) {
         return errorResponse('单次最多查询50封邮件', 400);
       }
-      
+
       if (isMock) {
         const arr = ids.map(id => buildMockEmailDetail(id));
         return Response.json(arr);
       }
-      
+
       let timeFilter = '';
       let timeParam = [];
       if (isMailboxOnly) {
@@ -100,7 +147,7 @@ export async function handleEmailsApi(request, db, url, path, options) {
         timeFilter = ' AND received_at >= ?';
         timeParam = [twentyFourHoursAgo];
       }
-      
+
       const placeholders = ids.map(() => '?').join(',');
       try {
         const { results } = await db.prepare(`
@@ -133,10 +180,10 @@ export async function handleEmailsApi(request, db, url, path, options) {
       if (!mailboxId) {
         return Response.json({ success: true, deletedCount: 0 });
       }
-      
+
       const result = await db.prepare(`DELETE FROM messages WHERE mailbox_id = ?`).bind(mailboxId).run();
       const deletedCount = result?.meta?.changes || 0;
-      
+
       return Response.json({
         success: true,
         deletedCount
@@ -180,7 +227,7 @@ export async function handleEmailsApi(request, db, url, path, options) {
         timeFilter = ' AND received_at >= ?';
         timeParam = [twentyFourHoursAgo];
       }
-      
+
       const { results } = await db.prepare(`
         SELECT id, sender, to_addrs, subject, verification_code, preview, r2_bucket, r2_object_key, received_at, is_read
         FROM messages WHERE id = ?${timeFilter}
@@ -195,7 +242,7 @@ export async function handleEmailsApi(request, db, url, path, options) {
       const row = results[0];
       let content = '';
       let html_content = '';
-      
+
       try {
         if (row.r2_object_key && r2) {
           const obj = await r2.get(row.r2_object_key);
@@ -236,15 +283,15 @@ export async function handleEmailsApi(request, db, url, path, options) {
   if (request.method === 'DELETE' && path.startsWith('/api/email/')) {
     if (isMock) return errorResponse('演示模式不可删除', 403);
     const emailId = path.split('/')[3];
-    
+
     if (!emailId || !Number.isInteger(parseInt(emailId))) {
       return errorResponse('无效的邮件ID', 400);
     }
-    
+
     try {
       const result = await db.prepare(`DELETE FROM messages WHERE id = ?`).bind(emailId).run();
       const deleted = (result?.meta?.changes || 0) > 0;
-      
+
       return Response.json({
         success: true,
         deleted,

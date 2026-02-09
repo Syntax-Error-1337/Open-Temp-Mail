@@ -20,6 +20,7 @@ interface EmailSummary {
     preview: string;
     received_at: string;
     is_read?: boolean;
+    mailbox_address?: string; // For admin all-mailbox view
 }
 
 interface EmailDetail extends EmailSummary {
@@ -47,12 +48,22 @@ export default function Mailbox() {
     const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
 
     const fetchEmails = useCallback(async (silent = false) => {
-        if (!targetMailbox) return;
+        // Allow admin to fetch all emails when no mailbox specified
+        const isAdminAllView = !targetMailbox && user?.role === 'admin';
+
+        if (!targetMailbox && !isAdminAllView) return;
 
         if (!silent) setIsLoadingList(true);
         try {
-            // Fetch more emails to better support client-side search
-            const endpoint = `/api/emails?mailbox=${encodeURIComponent(targetMailbox)}&limit=100&offset=0`;
+            let endpoint;
+            if (isAdminAllView) {
+                // Admin view: fetch all emails from all mailboxes
+                endpoint = `/api/emails?limit=100&offset=0`;
+            } else {
+                // Specific mailbox view
+                endpoint = `/api/emails?mailbox=${encodeURIComponent(targetMailbox!)}&limit=100&offset=0`;
+            }
+
             const response = await apiFetch<{ results?: EmailSummary[] } | EmailSummary[]>(endpoint);
 
             if (Array.isArray(response)) {
@@ -66,13 +77,14 @@ export default function Mailbox() {
         } finally {
             if (!silent) setIsLoadingList(false);
         }
-    }, [targetMailbox]);
+    }, [targetMailbox, user?.role]);
 
     useEffect(() => {
-        if (targetMailbox) {
+        const isAdminAllView = !targetMailbox && user?.role === 'admin';
+        if (targetMailbox || isAdminAllView) {
             fetchEmails();
         }
-    }, [fetchEmails, targetMailbox]);
+    }, [fetchEmails, targetMailbox, user?.role]);
 
     // Auto-refresh logic
     useEffect(() => {
@@ -196,6 +208,11 @@ export default function Mailbox() {
                                     {formatDistanceToNow(new Date(email.received_at), { addSuffix: true })}
                                 </span>
                             </div>
+                            {email.mailbox_address && (
+                                <div className="text-xs text-blue-600 dark:text-blue-400 mb-1">
+                                    📬 {email.mailbox_address}
+                                </div>
+                            )}
                             <div className="text-sm truncate mb-1">{email.subject}</div>
                             <div className="text-xs text-muted-foreground line-clamp-2 font-normal">
                                 {email.preview}

@@ -8,6 +8,7 @@ import { Mail, Users } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UserList } from './UserList';
 import { MailboxList } from './MailboxList';
+import { TempMailGenerator } from './TempMailGenerator';
 
 export default function Dashboard() {
     const { user } = useAuth();
@@ -104,19 +105,22 @@ export default function Dashboard() {
                         </Card>
                     </div>
 
-                    <Card className="col-span-3">
-                        <CardHeader>
-                            <CardTitle>Recent Activity</CardTitle>
-                            <CardDescription>
-                                Overview of system activity.
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-sm text-muted-foreground">
-                                System running normally. Use the tabs above to manage Mailboxes and Users.
-                            </div>
-                        </CardContent>
-                    </Card>
+                    <div className="grid gap-4 md:grid-cols-2">
+                        <TempMailGenerator />
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Recent Activity</CardTitle>
+                                <CardDescription>
+                                    Overview of system activity.
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-sm text-muted-foreground">
+                                    System running normally. Use the tabs above to manage Mailboxes and Users.
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </div>
                 </TabsContent>
 
                 {isAdmin && (
