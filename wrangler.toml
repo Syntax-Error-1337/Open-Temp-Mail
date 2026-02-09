@@ -1,4 +1,4 @@
-name = "freemail-v2"
+name = "open-temp-mail"
 main = "worker/src/server.js"
 compatibility_date = "2024-01-01"
 
