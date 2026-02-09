@@ -1,0 +1,62 @@
+# Dependencies
+node_modules/
+
+# Production
+dist/
+build/
+
+# Environment Variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.dev.vars
+
+# Cloudflare
+.wrangler/
+worker-configuration.d.ts
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+logs/
+*.log
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Editor/IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+.cursor
+
+# OS Generated
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Testing
+coverage/
+.nyc_output/
+
+# Temporary
+tmp/
+temp/
+
+# Application Specific
+eml/
+
+# Preserved User Specific
+/asset/bookmarks_2025_9_5_2.html
+/asset/bookmarks_2025_9_5.html
