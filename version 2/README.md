@@ -37,9 +37,17 @@ The frontend is configured to proxy API requests to `http://localhost:8787`.
 To change this, edit `vite.config.ts`.
 
 ## Deployment
-See [DEPLOY.md](DEPLOY.md) for detailed deployment instructions using Cloudflare Workers.
+See [DEPLOY.md](DEPLOY.md) for detailed instructions.
 
-To build for production:
+### One-Click Deployment
+For a quick setup, run:
+```bash
+npm run deploy:setup
+```
+This script will automate resource creation, configuration, and deployment.
+
+### Manual Deployment
+To build for production manually:
 ```bash
 npm run build
 ```
