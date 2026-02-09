@@ -43,7 +43,7 @@ const run = (cmd, options = {}) => {
 const ask = (question) => new Promise((resolve) => rl.question(`${colors.bright}${question}${colors.reset} `, resolve));
 
 async function main() {
-    console.log(`${colors.bright}🚀 Freemail V2 - One-Click Deployment Setup${colors.reset}\n`);
+    console.log(`${colors.bright}🚀 Open-Temp-Mail - One-Click Deployment Setup${colors.reset}\n`);
 
     // 1. Check prerequisites
     step('Checking prerequisites...');

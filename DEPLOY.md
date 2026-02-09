@@ -1,6 +1,6 @@
-# Freemail Version 2 Deployment Guide
+# Open-Temp-Mail Deployment Guide
 
-This guide provides step-by-step instructions to deploy the Freemail Version 2 application to Cloudflare Workers. It covers everything from setting up your environment to rigorous verification.
+This guide provides step-by-step instructions to deploy the Open-Temp-Mail application to Cloudflare Workers. It covers everything from setting up your environment to rigorous verification.
 
 ## Prerequisites
 
@@ -71,7 +71,7 @@ Navigate to the project directory and install dependencies.
 
 1.  Open your terminal in the `version 2` folder of your project:
     ```bash
-    cd "path/to/freemail/version 2"
+    cd "path/to/open-temp-mail"
     ```
 2.  Install project dependencies:
     ```bash
@@ -162,7 +162,7 @@ Now, build the frontend and deploy the full stack to Cloudflare.
     ```
 
 3.  **Success!**
-    The terminal will output your Worker's URL, e.g., `https://freemail-v2.your-subdomain.workers.dev`.
+    The terminal will output your Worker's URL, e.g., `https://open-temp-mail.your-subdomain.workers.dev`.
 
 ---
 
@@ -180,13 +180,13 @@ To receive emails, you must configure Cloudflare Email Routing.
 6.  Click **Create Custom Address**.
     -   **Custom Address**: Enter `*` (Catch-all) to receive emails for any address (e.g., `anything@yourdomain.com`).
     -   **Action**: `Send to a Worker`.
-    -   **Destination**: Select your newly deployed Worker (`freemail-v2`).
+    -   **Destination**: Select your newly deployed Worker (`open-temp-mail`).
 7.  Click **Save**.
 
 ### 7.2 Verify Deployment
 
 1.  Open your Worker URL in a browser.
-2.  You should see the Freemail login page.
+2.  You should see the Open-Temp-Mail login page.
 3.  Login with `admin` and the password you set in **Step 5**.
 4.  Try creating a random mailbox to test database connectivity.
 5.  Try sending an email to that mailbox (from an external account like Gmail) to test Email Routing.

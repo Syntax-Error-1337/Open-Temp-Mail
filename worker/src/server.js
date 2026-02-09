@@ -1,5 +1,5 @@
 /**
- * Freemail 主入口文件
+ * Open-Temp-Mail 主入口文件
  * 
  * 本文件作为 Cloudflare Worker 的入口点，负责：
  * 1. 处理 HTTP 请求（通过 fetch 处理器）

@@ -50,7 +50,7 @@ export default function Layout() {
                 <div className="h-full flex flex-col">
                     <div className="h-16 flex items-center px-6 border-b">
                         <span className="text-xl font-bold bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">
-                            Freemail v2
+                            Open-Temp-Mail
                         </span>
                     </div>
 
