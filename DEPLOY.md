@@ -23,7 +23,6 @@ We provide a script to automate the entire setup process.
     ```
 2.  **Run Setup**:
     ```bash
-    cd "version 2"
     npm run deploy:setup
     ```
     Follow the interactive prompts to set up your database, secrets, and deploy.
@@ -69,10 +68,12 @@ Connect your local environment to your Cloudflare account.
 
 Navigate to the project directory and install dependencies.
 
-1.  Open your terminal in the `version 2` folder of your project:
+1.  Open your terminal in the project folder:
     ```bash
     cd "path/to/open-temp-mail"
     ```
+    *(Navigate to where you cloned the repository)*
+
 2.  Install project dependencies:
     ```bash
     npm install
@@ -93,45 +94,53 @@ You need two main resources: a **D1 Database** (for storing user/mailbox data) a
 2.  **Copy the output!** You will see something like this:
     ```toml
     [[d1_databases]]
-    binding = "DB" # i.e. available in your Worker on env.DB
+    binding = "TEMP_MAIL_DB" # IMPORTANT: Must be TEMP_MAIL_DB
     database_name = "maill_free_db"
     database_id = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
     ```
 3.  Open `wrangler.toml` in your text editor.
-4.  Find the `[[d1_databases]]` section.
-5.  Update the `database_id` with the one you just copied. **Do not change the `binding` name (`TEMP_MAIL_DB`)**, as the code relies on it.
+4.  Replace the `[[d1_databases]]` section with the output from **Step 2**.
+    *   **CRITICAL**: Ensure `binding = "TEMP_MAIL_DB"`. If the output says "DB", change it to "TEMP_MAIL_DB".
 
-### 4.2 Initialize Database Schema
+### 4.2 Create R2 Bucket
 
-Apply the database structure (tables) to your new D1 database.
-
-1.  Run the execute command:
-    ```bash
-    wrangler d1 execute maill_free_db --file=d1-init.sql
-    ```
-2.  Type `y` if prompted to confirm (for remote databases).
-
-### 4.3 Create R2 Bucket
-
-1.  Run the create command:
+1.  Run the creation command:
     ```bash
     wrangler r2 bucket create mail-eml
     ```
-2.  Confirm it matches the `bucket_name` in your `wrangler.toml` (default is `mail-eml`).
+2.  Open `wrangler.toml` and verify the `[[r2_buckets]]` section:
+    ```toml
+    [[r2_buckets]]
+    binding = "MAIL_EML"
+    bucket_name = "mail-eml"
+    ```
 
 ---
 
-## Step 5: Configure Secrets
+## Step 5: Configure Environment Variables
 
-Set up secure environment variables for your application.
+Open `wrangler.toml` and configure the `[vars]` section.
 
-1.  **Strict Admin Password** (Required):
+### Essential Variables
+
+*   **MAIL_DOMAIN**: Your email domain(s), separated by commas.
+    *   Example: `"example.com, temp.example.com"`
+*   **ADMIN_NAME**: The username for the admin dashboard.
+    *   Default: `"admin"`
+
+### Secrets (Set via Wrangler CLI)
+
+Do **NOT** put passwords in `wrangler.toml`. Set them securely using `wrangler secret put`.
+
+Run the following commands in your terminal:
+
+1.  **Admin Password**:
     ```bash
     wrangler secret put ADMIN_PASSWORD
-    # Enter your desired rigorous password when prompted
     ```
+    *Enter your desired strong password when prompted.*
 
-2.  **JWT Signing Token** (Required):
+2.  **JWT Token Secret** (for session security):
     ```bash
     wrangler secret put JWT_TOKEN
     # Enter a long, random string (e.g., generated via `openssl rand -hex 32`)

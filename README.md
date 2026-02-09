@@ -36,6 +36,7 @@
 ### Prerequisites
 - **Node.js** 18+
 - **Cloudflare Account** (for Workers & D1)
+- **Wrangler CLI** (`npm install -g wrangler`)
 
 ### Installation
 
@@ -56,19 +57,30 @@
     ```
     Visit `http://localhost:5173` to view the app.
 
+## ⚙️ Configuration
+
+Open-Temp-Mail uses `wrangler.toml` for configuration.
+
+| Variable | Description | Example |
+| :--- | :--- | :--- |
+| `MAIL_DOMAIN` | Your email domain(s), comma-separated | `"example.com, temp.io"` |
+| `ADMIN_NAME` | Username for the admin dashboard | `"admin"` |
+
+**Secrets** (Set via `wrangler secret put`):
+- `ADMIN_PASSWORD`: Secure password for admin access.
+- `JWT_TOKEN`: Random string for session security.
+- `RESEND_API_KEY`: (Optional) For sending emails via Resend.
+
 ## 📦 Deployment
 
-Open-Temp-Mail is designed to be deployed effortlessly to Cloudflare.
-
 ### One-Click Deployment
-For a quick setup, run the automated setup script:
+Run the automated setup script to create resources and deploy:
 ```bash
 npm run deploy:setup
 ```
-This script will automate resource creation (D1 User DB), configuration, and initial deployment.
 
 ### Manual Deployment
-For granular control over the deployment process, please refer to the detailed **[DEPLOY.md](./DEPLOY.md)** guide.
+For detailed steps on manually configuring Cloudflare D1, R2, and Secrets, please refer to our **[Deployment Guide](./DEPLOY.md)**.
 
 ## 📂 Project Structure
 
