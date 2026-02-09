@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { apiFetch } from '@/lib/api';
 import { Button } from '@/components/ui/button';
@@ -29,11 +30,12 @@ interface EmailDetail extends EmailSummary {
 }
 
 export default function Mailbox() {
-    useAuth(); // We just need the hook to run, or we can remove it if we don't use the return. 
-    // Actually the original code accessed user.mailboxAddress, but now we don't.
-    // But usually we keep it to ensure context is valid or for redirection if protected route.
-    // The lint says '_' is assigned but never used.
-    // Let's just call useAuth() without destructuring if we don't use the user object.
+    const { user } = useAuth();
+    const [searchParams] = useSearchParams();
+    const queryMailbox = searchParams.get('mailbox');
+
+    const targetMailbox = queryMailbox || user?.mailboxAddress;
+
     const [emails, setEmails] = useState<EmailSummary[]>([]);
     const [selectedEmail, setSelectedEmail] = useState<EmailDetail | null>(null);
     const [isLoadingList, setIsLoadingList] = useState(false);
@@ -45,20 +47,13 @@ export default function Mailbox() {
     const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
 
     const fetchEmails = useCallback(async (silent = false) => {
+        if (!targetMailbox) return;
+
         if (!silent) setIsLoadingList(true);
         try {
             // Fetch more emails to better support client-side search
-            await apiFetch<unknown>(`/api/emails?limit=100&offset=0`); // Keeping 'any' for now or defining type if possible, but 'any' is easiest if structure varies.  
-            // Wait, I should try to fix 'any' if possible.
-            // The lint complained about apiFetch<any>.
-            // Let's use 'unknown' or a better type.
-            // But apiFetch<T> returns T.
-            // Let's define the expected response.
-            /* 
-               The worker returns either an array (if standard) or { results: ... } (if D1).
-               We handle both.
-            */
-            const response = await apiFetch<{ results?: EmailSummary[] } | EmailSummary[]>(`/api/emails?limit=100&offset=0`);
+            const endpoint = `/api/emails?mailbox=${encodeURIComponent(targetMailbox)}&limit=100&offset=0`;
+            const response = await apiFetch<{ results?: EmailSummary[] } | EmailSummary[]>(endpoint);
 
             if (Array.isArray(response)) {
                 setEmails(response);
@@ -71,11 +66,13 @@ export default function Mailbox() {
         } finally {
             if (!silent) setIsLoadingList(false);
         }
-    }, []);
+    }, [targetMailbox]);
 
     useEffect(() => {
-        fetchEmails();
-    }, [fetchEmails]);
+        if (targetMailbox) {
+            fetchEmails();
+        }
+    }, [fetchEmails, targetMailbox]);
 
     // Auto-refresh logic
     useEffect(() => {

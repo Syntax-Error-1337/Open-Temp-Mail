@@ -199,3 +199,39 @@ To receive emails, you must configure Cloudflare Email Routing.
 -   **Database errors**: Ensure you ran the `d1 execute` command (Step 4.2).
 -   **"Uncaught (in promise)"**: Check your `wrangler secret list` to ensure all secrets are set.
 -   **Email not received**: Verify your domain's MX records in Cloudflare DNS settings match what Email Routing requires.
+
+---
+
+## Local Development
+
+You can run the application locally in two modes: **Local Mode** (using a local temporary database) or **Remote Mode** (connecting to your live Cloudflare D1 database).
+
+### Option 1: Local Backend (Default)
+*Use this for safe development without affecting production data.*
+
+1.  **Start Frontend**:
+    ```bash
+    npm run dev
+    ```
+    (Runs on `http://localhost:5173`)
+
+2.  **Start Backend** (in a new terminal):
+    ```bash
+    npm run dev:backend
+    ```
+    (Runs on `http://localhost:8787` using a local SQLite file)
+
+### Option 2: Remote Backend (Live Data)
+*Use this to debug with your actual production database.*
+
+1.  **Start Frontend**:
+    ```bash
+    npm run dev
+    ```
+
+2.  **Start Backend** (in a new terminal):
+    ```bash
+    npm run dev:backend:remote
+    ```
+    (Runs on `http://localhost:8787` but connects to your generic Cloudflare D1 DB)
+
