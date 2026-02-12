@@ -1,6 +1,6 @@
 # 📬 Open-Temp-Mail
 
-[![Deploy to Cloudflare Workers](https://deploy.workers.cloudflare.com/deploy-button.svg)](https://deploy.workers.cloudflare.com/?url=https://github.com/Syntax-Error-1337/Open-Temp-Mail)
+[![Deploy to Cloudflare Workers](https://workers.cloudflare.com/built-with-cloudflare.svg)](https://deploy.workers.cloudflare.com/?url=https://github.com/Syntax-Error-1337/Open-Temp-Mail)
 [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/Syntax-Error-1337/Open-Temp-Mail)
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Version](https://img.shields.io/badge/version-1.0.0-green.svg)
