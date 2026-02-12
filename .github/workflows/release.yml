@@ -1,0 +1,38 @@
+name: Release App
+
+on:
+  push:
+    tags:
+      - 'v*' # Push events to matching v*, i.e. v1.0, v20.15.10
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Build Application
+        run: npm run build
+
+      - name: Archive Production Artifact
+        run: |
+          zip -r open-temp-mail-${{ github.ref_name }}.zip dist
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: open-temp-mail-${{ github.ref_name }}.zip
+          generate_release_notes: true
