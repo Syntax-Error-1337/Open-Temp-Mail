@@ -1,6 +1,7 @@
 # 📬 Open-Temp-Mail
 
-[![Deploy to Cloudflare Workers](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/Syntax-Error-1337/open-temp-mail)
+[![Deploy to Cloudflare Workers](https://deploy.workers.cloudflare.com/deploy-button.svg)](https://deploy.workers.cloudflare.com/?url=https://github.com/Syntax-Error-1337/Open-Temp-Mail)
+[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/Syntax-Error-1337/Open-Temp-Mail)
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Version](https://img.shields.io/badge/version-1.0.0-green.svg)
 ![Status](https://img.shields.io/badge/status-stable-success.svg)
@@ -56,6 +57,14 @@
     npm run dev
     ```
     Visit `http://localhost:5173` to view the app.
+
+## 🤝 Contributing
+
+We love contributions! Please read our [Contributing Guide](CONTRIBUTING.md) to get started.
+
+- report bugs using our [Bug Report Template](.github/ISSUE_TEMPLATE/bug_report.md)
+- suggest features using our [Feature Request Template](.github/ISSUE_TEMPLATE/feature_request.md)
+- please respect our [Code of Conduct](CODE_OF_CONDUCT.md)
 
 ## ⚙️ Configuration
 
