@@ -79,6 +79,7 @@ Open-Temp-Mail uses `wrangler.toml` for configuration.
 - `ADMIN_PASSWORD`: Secure password for admin access.
 - `JWT_TOKEN`: Random string for session security.
 - `RESEND_API_KEY`: (Optional) For sending emails via Resend.
+  > **Note**: Resend offers a free tier with 3000 emails/month, which is perfect for personal use.
 
 ## 📦 Deployment
 

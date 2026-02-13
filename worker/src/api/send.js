@@ -27,6 +27,13 @@ async function checkSendPermission(request, db, options) {
   
   // 管理员默认允许
   if (payload.role === 'admin') return true;
+
+  // 邮箱用户允许（必须匹配 from 地址）
+  if (payload.role === 'mailbox') {
+    const fromAddr = options.fromAddress || '';
+    return fromAddr && payload.mailboxAddress && 
+           fromAddr.toLowerCase() === payload.mailboxAddress.toLowerCase();
+  }
   
   // 普通用户检查 can_send 权限（使用缓存）
   if (payload.userId) {
@@ -114,9 +121,11 @@ export async function handleSendApi(request, db, url, path, options) {
     try {
       if (!RESEND_API_KEY) return errorResponse('未配置 Resend API Key', 500);
       
-      const allowed = await checkSendPermission(request, db, options);
-      if (!allowed) return errorResponse('未授权发件或该用户未被授予发件权限', 403);
       const sendPayload = await request.json();
+      
+      // 添加 fromAddress 到 options 以供权限检查使用
+      const checkOptions = { ...options, fromAddress: sendPayload.from };
+      const allowed = await checkSendPermission(request, db, checkOptions);
       const result = await sendEmailWithAutoResend(RESEND_API_KEY, sendPayload);
       await recordSentEmail(db, {
         resendId: result.id || null,
