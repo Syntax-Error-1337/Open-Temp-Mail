@@ -32,6 +32,15 @@ const error = (msg) => {
 
 const run = (cmd, options = {}) => {
     try {
+        // Prepare options for execSync
+        const execOptions = { ...options };
+        if (options.input) {
+            execOptions.input = options.input;
+            delete execOptions.input; // Remote input from options passed to execSync if it's not supported directly in the spread (though it is for some node versions, let's be safe)
+        }
+        
+        // If providing input, we must rely on the provided stdio or default to pipe for stdin
+        // execSync with input handles stdin automatically if not overridden to something incompatible
         const result = execSync(cmd, { stdio: 'pipe', encoding: 'utf-8', ...options });
         return result ? result.trim() : null;
     } catch (e) {
@@ -157,8 +166,13 @@ async function main() {
     // Check if secrets likely exist (rudimentary check, or just prompt to overwrite)
     const adminPassword = await ask('Enter a secure Admin Password:');
     if (adminPassword) {
-        run(`echo "${adminPassword}" | wrangler secret put ADMIN_PASSWORD`);
-        success('ADMIN_PASSWORD set.');
+        // Use input option to pass password to stdin, avoiding echo and potential shell issues
+        try {
+            run('wrangler secret put ADMIN_PASSWORD', { input: adminPassword, stdio: ['pipe', 'pipe', 'inherit'] });
+            success('ADMIN_PASSWORD set.');
+        } catch (e) {
+            error(`Failed to set ADMIN_PASSWORD: ${e.message}`);
+        }
     }
 
     const jwtToken = await ask('Enter a random JWT Token (or press Enter to generate one):');
@@ -167,8 +181,22 @@ async function main() {
         finalJwt = crypto.randomBytes(32).toString('hex');
         console.log(`Generated JWT Token: ${finalJwt}`);
     }
-    run(`echo "${finalJwt}" | wrangler secret put JWT_TOKEN`);
-    success('JWT_TOKEN set.');
+    try {
+        run('wrangler secret put JWT_TOKEN', { input: finalJwt, stdio: ['pipe', 'pipe', 'inherit'] });
+        success('JWT_TOKEN set.');
+    } catch (e) {
+        error(`Failed to set JWT_TOKEN: ${e.message}`);
+    }
+
+    const resendApiKey = await ask('Enter your Resend API Key (optional, for sending emails):');
+    if (resendApiKey) {
+        try {
+            run('wrangler secret put RESEND_API_KEY', { input: resendApiKey, stdio: ['pipe', 'pipe', 'inherit'] });
+            success('RESEND_API_KEY set.');
+        } catch (e) {
+            error(`Failed to set RESEND_API_KEY: ${e.message}`);
+        }
+    }
 
     const mailDomain = await ask('Enter your Mail Domain (e.g., example.com):');
     if (mailDomain) {
@@ -184,6 +212,34 @@ async function main() {
         warn('MAIL_DOMAIN not set. You may need to configure this manually in wrangler.toml.');
     }
 
+    let finalAdminName = 'admin';
+    const adminName = await ask('Enter a custom Admin Username (default: admin):');
+    if (adminName && adminName.trim() !== '' && adminName.trim() !== 'admin') {
+        finalAdminName = adminName.trim();
+        wranglerConfig = fs.readFileSync(wranglerPath, 'utf-8');
+        
+        // Check if ADMIN_NAME already exists
+        if (wranglerConfig.includes('ADMIN_NAME')) {
+            const updatedConfig = wranglerConfig.replace(
+                /ADMIN_NAME\s*=\s*"[^"]*"/,
+                `ADMIN_NAME = "${finalAdminName}"`
+            );
+            fs.writeFileSync(wranglerPath, updatedConfig);
+        } else {
+            // Append to [vars] section
+            if (wranglerConfig.includes('[vars]')) {
+                 const updatedConfig = wranglerConfig.replace(
+                    /\[vars\]/,
+                    `[vars]\nADMIN_NAME = "${finalAdminName}"`
+                );
+                fs.writeFileSync(wranglerPath, updatedConfig);
+            } else {
+                fs.appendFileSync(wranglerPath, `\n[vars]\nADMIN_NAME = "${finalAdminName}"\n`);
+            }
+        }
+        success(`ADMIN_NAME set to '${finalAdminName}' in wrangler.toml.`);
+    }
+
 
     // 7. Deploy
     step('Building and Deploying...');
@@ -196,7 +252,7 @@ async function main() {
 
         console.log(`\n${colors.green}${colors.bright}✅ Deployment Complete!${colors.reset}`);
         console.log(`\nYour app should be live. Check the URL above.`);
-        console.log(`Admin User: admin`);
+        console.log(`Admin User: ${finalAdminName}`);
         console.log(`Admin Password: (hidden)`);
 
     } catch (e) {
