@@ -31,10 +31,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         try {
             const data = await apiFetch<User>('/api/session');
             if (data && data.role) {
-                console.log('Session check success:', data);
                 setUser(data);
             } else {
-                console.warn('Session check returned invalid data:', data);
                 setUser(null);
             }
         } finally {

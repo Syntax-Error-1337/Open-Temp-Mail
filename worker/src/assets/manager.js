@@ -10,6 +10,53 @@ import { resolveAuthPayload } from '../middleware/auth.js';
  */
 export class AssetManager {
   constructor() {
+    this.allowedPaths = new Set([
+      '/',
+      '/index.html',
+      '/login',
+      '/dashboard',
+      '/mailbox',
+      '/compose',
+      '/sent',
+      '/settings',
+      '/login.html',
+      '/admin.html',
+      '/html/mailboxes.html',
+      '/mailboxes.html',
+      '/mailbox.html',
+      '/html/mailbox.html',
+      '/templates/app.html',
+      '/templates/footer.html',
+      '/templates/loading.html',
+      '/templates/loading-inline.html',
+      '/templates/toast.html',
+      '/app.js',
+      '/app.css',
+      '/admin.js',
+      '/admin.css',
+      '/login.js',
+      '/login.css',
+      '/mailbox.js',
+      '/mock.js',
+      '/favicon.svg',
+      '/route-guard.js',
+      '/app-router.js',
+      '/app-mobile.js',
+      '/app-mobile.css',
+      '/mailbox.css',
+      '/auth-guard.js',
+      '/storage.js'
+    ]);
+
+    this.allowedPrefixes = [
+      '/assets/',
+      '/pic/',
+      '/templates/',
+      '/public/',
+      '/js/',
+      '/css/',
+      '/html/'
+    ];
 
     this.protectedPaths = new Set([
       '/admin.html',
@@ -67,8 +114,16 @@ export class AssetManager {
     // Allow .html files to fall through to specific handlers or asset fetch
     // But map SPA routes to index.html
 
+    let mappedRequest = this.handlePathMapping(request, url);
+
+    if (pathname === '/' || pathname === '/index.html' || pathname === '/login' || 
+        pathname === '/dashboard' || pathname === '/mailbox' || pathname === '/compose' || 
+        pathname === '/sent' || pathname === '/settings') {
+      return await this.handleIndexPage(mappedRequest, env, mailDomains, JWT_TOKEN);
+    }
+
     if (pathname === '/admin.html' || pathname === '/admin') {
-      return await this.handleAdminPage(this.handlePathMapping(request, url), env, JWT_TOKEN);
+      return await this.handleAdminPage(mappedRequest, env, JWT_TOKEN);
     }
 
     if (pathname === '/mailbox.html' || pathname === '/html/mailbox.html') {
@@ -169,7 +224,11 @@ export class AssetManager {
   handlePathMapping(request, url) {
     let targetUrl = url.toString();
 
-    // Mapping logic for specific legacy/static references
+    const spaRoutes = ['/login', '/dashboard', '/mailbox', '/compose', '/sent', '/settings'];
+    if (spaRoutes.includes(url.pathname)) {
+      // SPA route: serve index.html
+      targetUrl = new URL('/index.html', url).toString();
+    }
     if (url.pathname === '/admin') {
       targetUrl = new URL('/html/admin.html', url).toString();
     }
