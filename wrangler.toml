@@ -11,7 +11,7 @@ database_id = "46d67b6b-4a93-46d67b6b-9769-46d67b6b" # Updated with user's datab
 # Environment Variables
 [vars]
 # FORWARD_RULES="[{\"prefix\":\"vip\",\"email\":\"a@example.com\"},{\"prefix\":\"*\",\"email\":\"admin@example.com\"}]"
-MAIL_DOMAIN = "gxtend.vip"
+MAIL_DOMAIN = "domain.com"
 
 # Static Assets (Vite build output)
 [assets]
