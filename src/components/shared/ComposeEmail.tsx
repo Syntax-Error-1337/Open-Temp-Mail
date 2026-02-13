@@ -7,13 +7,16 @@ import { Loader2, Send } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import toast from 'react-hot-toast';
 
-export function ComposeEmail({ onClose }: { onClose?: () => void }) {
+export function ComposeEmail({ onClose, initialValues }: { 
+    onClose?: () => void;
+    initialValues?: { to?: string; subject?: string; body?: string; isHtml?: boolean } 
+}) {
     const { user } = useAuth();
     const { sendEmail, isSending } = useSender();
-    const [to, setTo] = useState('');
-    const [subject, setSubject] = useState('');
-    const [body, setBody] = useState('');
-    const [isHtml, setIsHtml] = useState(false);
+    const [to, setTo] = useState(initialValues?.to || '');
+    const [subject, setSubject] = useState(initialValues?.subject || '');
+    const [body, setBody] = useState(initialValues?.body || '');
+    const [isHtml, setIsHtml] = useState(initialValues?.isHtml || false);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();

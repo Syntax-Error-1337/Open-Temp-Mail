@@ -1,10 +1,10 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { apiFetch } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Trash2, RefreshCw, MailOpen, Mail, Search, KeyRound, Loader2 } from 'lucide-react';
+import { Trash2, RefreshCw, MailOpen, Mail, Search, KeyRound, Loader2, Send } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import toast from 'react-hot-toast';
 import { cn } from '@/lib/utils';
@@ -32,6 +32,7 @@ interface EmailDetail extends EmailSummary {
 
 export default function Mailbox() {
     const { user } = useAuth();
+    const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const queryMailbox = searchParams.get('mailbox');
 
@@ -135,6 +136,16 @@ export default function Mailbox() {
         } catch {
             toast.error('Failed to delete email');
         }
+    };
+
+    const handleReply = (email: EmailDetail) => {
+        navigate('/compose', {
+            state: {
+                to: email.sender,
+                subject: email.subject.startsWith('Re:') ? email.subject : `Re: ${email.subject}`,
+                body: `\n\n\n--- Original Message ---\nFrom: ${email.sender}\nDate: ${new Date(email.received_at).toLocaleString()}\nSubject: ${email.subject}\n\n`
+            }
+        });
     };
 
     return (
@@ -262,6 +273,12 @@ export default function Mailbox() {
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-2">
+                                    <Button variant="outline" size="sm" onClick={() => handleReply(selectedEmail)}>
+                                        <div className="flex items-center">
+                                            <span className="mr-2">Reply</span>
+                                            <Send className="h-3 w-3" />
+                                        </div>
+                                    </Button>
                                     {selectedEmail.download && (
                                         <Button variant="outline" size="sm" asChild>
                                             <a href={selectedEmail.download} download>Download EML</a>

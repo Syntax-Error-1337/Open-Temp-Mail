@@ -110,7 +110,7 @@ export function createRouter() {
               success: true,
               role: 'mailbox',
               mailbox: mailboxInfo.address,
-              can_send: 0,
+              can_send: 1,
               mailbox_limit: 1
             }), { headers });
           }
