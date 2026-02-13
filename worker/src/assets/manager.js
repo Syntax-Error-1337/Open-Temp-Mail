@@ -14,6 +14,11 @@ export class AssetManager {
       '/',
       '/index.html',
       '/login',
+      '/dashboard',
+      '/mailbox',
+      '/compose',
+      '/sent',
+      '/settings',
       '/login.html',
       '/admin.html',
       '/html/mailboxes.html',
@@ -110,7 +115,9 @@ export class AssetManager {
 
     const mappedRequest = this.handlePathMapping(request, url);
 
-    if (pathname === '/' || pathname === '/index.html') {
+    if (pathname === '/' || pathname === '/index.html' || pathname === '/login' || 
+        pathname === '/dashboard' || pathname === '/mailbox' || pathname === '/compose' || 
+        pathname === '/sent' || pathname === '/settings') {
       return await this.handleIndexPage(mappedRequest, env, mailDomains, JWT_TOKEN);
     }
 
@@ -138,8 +145,11 @@ export class AssetManager {
 
     if (isSpaRoute) {
       // Serve index.html for SPA routes
+    if (isSpaRoute) {
+      // Serve index.html for SPA routes
       const indexRequest = new Request(new URL('/', url).toString(), request);
       return env.ASSETS.fetch(indexRequest);
+    }
     }
 
     const payload = await resolveAuthPayload(request, JWT_TOKEN);
@@ -198,8 +208,10 @@ export class AssetManager {
   handlePathMapping(request, url) {
     let targetUrl = url.toString();
 
-    if (url.pathname === '/login') {
-      targetUrl = new URL('/login.html', url).toString();
+    const spaRoutes = ['/login', '/dashboard', '/mailbox', '/compose', '/sent', '/settings'];
+    if (spaRoutes.includes(url.pathname)) {
+      // SPA route: serve index.html
+      targetUrl = new URL('/index.html', url).toString();
     }
 
     if (url.pathname === '/admin') {
