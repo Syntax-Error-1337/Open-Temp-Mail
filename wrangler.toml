@@ -7,11 +7,12 @@ compatibility_date = "2024-01-01"
 binding = "TEMP_MAIL_DB"
 database_name = "maill_free_db" # Replace with your D1 database name
 database_id = "46d67b6b-4a93-46d67b6b-9769-46d67b6b" # Updated with user's database_id
+preview_database_id = "46d67b6b-4a93-46d67b6b-9769-46d67b6b"
 
 # Environment Variables
 [vars]
 # FORWARD_RULES="[{\"prefix\":\"vip\",\"email\":\"a@example.com\"},{\"prefix\":\"*\",\"email\":\"admin@example.com\"}]"
-MAIL_DOMAIN = "domain.com"
+MAIL_DOMAIN = "gxtend.vip"
 
 # Static Assets (Vite build output)
 [assets]
