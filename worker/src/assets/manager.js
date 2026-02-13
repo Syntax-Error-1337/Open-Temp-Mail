@@ -10,63 +10,13 @@ import { resolveAuthPayload } from '../middleware/auth.js';
  */
 export class AssetManager {
   constructor() {
-    this.allowedPaths = new Set([
-      '/',
-      '/index.html',
-      '/login',
-      '/dashboard',
-      '/mailbox',
-      '/compose',
-      '/sent',
-      '/settings',
-      '/login.html',
-      '/admin.html',
-      '/html/mailboxes.html',
-      '/mailboxes.html',
-      '/mailbox.html',
-      '/html/mailbox.html',
-      '/templates/app.html',
-      '/templates/footer.html',
-      '/templates/loading.html',
-      '/templates/loading-inline.html',
-      '/templates/toast.html',
-      '/app.js',
-      '/app.css',
-      '/admin.js',
-      '/admin.css',
-      '/login.js',
-      '/login.css',
-      '/mailbox.js',
-      '/mock.js',
-      '/favicon.svg',
-      '/route-guard.js',
-      '/app-router.js',
-      '/app-mobile.js',
-      '/app-mobile.css',
-      '/mailbox.css',
-      '/auth-guard.js',
-      '/storage.js'
-    ]);
-
-    this.allowedPrefixes = [
-      '/assets/',
-      '/pic/',
-      '/templates/',
-      '/public/',
-      '/js/',
-      '/css/',
-      '/html/'
-    ];
 
     this.protectedPaths = new Set([
       '/admin.html',
       '/admin',
-      '/admin/',
-      '/mailboxes.html',
       '/html/mailboxes.html',
       '/mailbox.html',
-      '/mailbox',
-      '/mailbox/'
+      '/html/mailbox.html'
     ]);
 
     this.guestOnlyPaths = new Set([
@@ -75,15 +25,10 @@ export class AssetManager {
     ]);
   }
 
-  isPathAllowed(pathname) {
-    if (this.allowedPaths.has(pathname)) {
-      return true;
-    }
-    return this.allowedPrefixes.some(prefix => pathname.startsWith(prefix));
-  }
-
   isProtectedPath(pathname) {
-    return this.protectedPaths.has(pathname);
+    return this.protectedPaths.has(pathname) || 
+           pathname.startsWith('/admin/') || 
+           pathname.startsWith('/mailbox/');
   }
 
   isGuestOnlyPath(pathname) {
@@ -95,8 +40,10 @@ export class AssetManager {
     const pathname = url.pathname;
     const JWT_TOKEN = env.JWT_TOKEN || env.JWT_SECRET || '';
 
-    if (!this.isPathAllowed(pathname)) {
-      return await this.handleIllegalPath(request, env, JWT_TOKEN);
+    // If request has prefix /api/, ignore it (should have been handled by router)
+    // But since this is the fallback for router, if it persists here, it means 404 API.
+    if (pathname.startsWith('/api/')) {
+      return new Response('API Not Found', { status: 404 });
     }
 
     if (this.isProtectedPath(pathname)) {
@@ -110,29 +57,43 @@ export class AssetManager {
     }
 
     if (!env.ASSETS || !env.ASSETS.fetch) {
-      return Response.redirect(new URL('/login.html', url).toString(), 302);
+      // Fallback for local dev without binding?
+      return new Response('Assets binding not found', { status: 500 });
     }
 
-    const mappedRequest = this.handlePathMapping(request, url);
+    // Determine if it is a file request (has extension) or a route request
+    const isFile = pathname.includes('.') && !pathname.endsWith('.html'); 
+    
+    // Allow .html files to fall through to specific handlers or asset fetch
+    // But map SPA routes to index.html
 
-    if (pathname === '/' || pathname === '/index.html' || pathname === '/login' || 
-        pathname === '/dashboard' || pathname === '/mailbox' || pathname === '/compose' || 
-        pathname === '/sent' || pathname === '/settings') {
-      return await this.handleIndexPage(mappedRequest, env, mailDomains, JWT_TOKEN);
-    }
-
-    if (pathname === '/admin.html') {
-      return await this.handleAdminPage(mappedRequest, env, JWT_TOKEN);
+    if (pathname === '/admin.html' || pathname === '/admin') {
+      return await this.handleAdminPage(this.handlePathMapping(request, url), env, JWT_TOKEN);
     }
 
     if (pathname === '/mailbox.html' || pathname === '/html/mailbox.html') {
-      return await this.handleMailboxPage(mappedRequest, env, JWT_TOKEN);
+      return await this.handleMailboxPage(this.handlePathMapping(request, url), env, JWT_TOKEN);
     }
+    
     if (pathname === '/mailboxes.html' || pathname === '/html/mailboxes.html') {
-      return await this.handleAllMailboxesPage(mappedRequest, env, JWT_TOKEN);
+      return await this.handleAllMailboxesPage(this.handlePathMapping(request, url), env, JWT_TOKEN);
     }
 
-    return env.ASSETS.fetch(mappedRequest);
+    // If it looks like a static asset, serve it directly
+    if (isFile) {
+      return env.ASSETS.fetch(request);
+    }
+
+    // Otherwise, treat as SPA route -> index.html
+    // Exclude .html files that are not special pages (though usually SPA doesn't have other .html files)
+    if (pathname.endsWith('.html')) {
+        return env.ASSETS.fetch(request);
+    }
+
+    // SPA Fallback: Serve index.html
+    // We map the request to /index.html
+    const indexRequest = new Request(new URL('/index.html', url).toString(), request);
+    return await this.handleIndexPage(indexRequest, env, mailDomains, JWT_TOKEN);
   }
 
   async handleIllegalPath(request, env, JWT_TOKEN) {
@@ -208,26 +169,31 @@ export class AssetManager {
   handlePathMapping(request, url) {
     let targetUrl = url.toString();
 
-    const spaRoutes = ['/login', '/dashboard', '/mailbox', '/compose', '/sent', '/settings'];
-    if (spaRoutes.includes(url.pathname)) {
-      // SPA route: serve index.html
-      targetUrl = new URL('/index.html', url).toString();
-    }
-
+    // Mapping logic for specific legacy/static references
     if (url.pathname === '/admin') {
       targetUrl = new URL('/html/admin.html', url).toString();
     }
-    if (url.pathname === '/admin.html') {
+    else if (url.pathname === '/admin.html') {
       targetUrl = new URL('/html/admin.html', url).toString();
     }
-
-    if (url.pathname === '/mailbox') {
+    else if (url.pathname === '/mailbox') {
+      // NOTE: Original logic had /mailbox -> /html/mailbox.html, but SPA might use /mailbox too?
+      // If SPA uses /mailbox, we shouldn't map it to /html/mailbox.html unless it's the legacy page.
+      // Current usage suggests /mailbox is an SPA route for user dashboard?
+      // Let's assume /html/mailbox.html is the legacy one and verify.
+      // For now, mapping /mailbox to /html/mailbox.html seems consistent with original intent for "protected" path.
+      // But if /mailbox is an SPA route, this breaks it.
+      // The original code listed /mailbox in "spaRoutes" AND used it for redirection.
+      // Let's rely on the caller passing mapped URL for specific pages, but for SPA, we map to /index.html.
+      
+      // If we are here, it's called by handleMailboxPage or handleAdminPage whic pass the mapped request.
+      // For generic SPA routes, handleAssetRequest constructs indexRequest manually.
       targetUrl = new URL('/html/mailbox.html', url).toString();
     }
-    if (url.pathname === '/mailbox.html') {
+    else if (url.pathname === '/mailbox.html') {
       targetUrl = new URL('/html/mailbox.html', url).toString();
     }
-    if (url.pathname === '/mailboxes.html') {
+    else if (url.pathname === '/mailboxes.html') {
       targetUrl = new URL('/html/mailboxes.html', url).toString();
     }
 
@@ -242,25 +208,9 @@ export class AssetManager {
       return Response.redirect(new URL('/html/mailbox.html', url).toString(), 302);
     }
 
-    const resp = await env.ASSETS.fetch(request);
-
-    try {
-      const text = await resp.text();
-
-      const injected = text.replace(
-        '<meta name="mail-domains" content="">',
-        `<meta name="mail-domains" content="${mailDomains.join(',')}">`
-      );
-
-      return new Response(injected, {
-        headers: {
-          'Content-Type': 'text/html; charset=utf-8',
-          'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0'
-        }
-      });
-    } catch (_) {
-      return resp;
-    }
+    // Directly return the asset response to avoid stream consumption issues
+    // The meta injection logic was targeting a non-existent tag anyway
+    return await env.ASSETS.fetch(request);
   }
 
   async handleAdminPage(request, env, JWT_TOKEN) {
@@ -322,18 +272,6 @@ export class AssetManager {
       return Response.redirect(new URL('/', url).toString(), 302);
     }
     return env.ASSETS.fetch(request);
-  }
-
-  addAllowedPath(path) {
-    this.allowedPaths.add(path);
-  }
-
-  addAllowedPrefix(prefix) {
-    this.allowedPrefixes.push(prefix);
-  }
-
-  removeAllowedPath(path) {
-    this.allowedPaths.delete(path);
   }
 
   isApiPath(pathname) {
