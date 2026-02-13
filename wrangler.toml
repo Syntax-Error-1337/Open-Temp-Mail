@@ -6,7 +6,7 @@ compatibility_date = "2024-01-01"
 [[d1_databases]]
 binding = "TEMP_MAIL_DB"
 database_name = "maill_free_db" # Replace with your D1 database name
-database_id = "dfdfdfdfdf-dfdfdfdf-dfdfdfdf-dfdfdfdf" # Updated with user's database_id
+database_id = "46d67b6b-4a93-46d67b6b-9769-46d67b6b" # Updated with user's database_id
 
 # Environment Variables
 [vars]

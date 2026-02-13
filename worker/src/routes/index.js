@@ -144,6 +144,10 @@ export function createRouter() {
   router.get('/api/session', async (context) => {
     const { request, env, authPayload } = context;
     const ADMIN_NAME = String(env.ADMIN_NAME || 'admin').trim().toLowerCase();
+    const MAIL_DOMAINS = (env.MAIL_DOMAIN || 'temp.example.com')
+      .split(/[,\s]+/)
+      .map(d => d.trim())
+      .filter(Boolean);
 
     if (!authPayload) {
       return new Response('Unauthorized', { status: 401 });
@@ -158,7 +162,8 @@ export function createRouter() {
       authenticated: true,
       role: authPayload.role || 'admin',
       username: authPayload.username || '',
-      strictAdmin
+      strictAdmin,
+      mailDomain: MAIL_DOMAINS[0] || ''
     };
 
     // 邮箱用户返回邮箱地址

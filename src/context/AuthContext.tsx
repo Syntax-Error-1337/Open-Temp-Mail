@@ -9,6 +9,7 @@ interface User {
     mailbox_limit?: number;
     id?: number;
     userId?: number;
+    mailDomain?: string;
 }
 
 interface AuthContextType {
@@ -25,6 +26,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
+
     const checkSession = async () => {
         try {
             const data = await apiFetch<User>('/api/session');
@@ -33,8 +35,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             } else {
                 setUser(null);
             }
-        } catch {
-            setUser(null);
+        } catch (error: any) {
+            // 401 Unauthorized is expected if not logged in
+            if (error.status === 401) {
+                setUser(null);
+            } else {
+                console.error('Session check failed:', error);
+                setUser(null);
+            }
         } finally {
             setIsLoading(false);
         }
