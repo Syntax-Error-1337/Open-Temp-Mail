@@ -25,8 +25,17 @@ export function ComposeEmail({ onClose, initialValues }: {
             return;
         }
 
+        let fromAddress = user?.mailboxAddress || '';
+        if (!fromAddress && user?.username && user?.mailDomain) {
+            fromAddress = `${user.username}@${user.mailDomain}`;
+        }
+        // Fallback if no domain available (though should be)
+        if (!fromAddress) {
+             fromAddress = user?.username || '';
+        }
+
         const payload = {
-            from: user?.mailboxAddress || user?.username || '', // Fallback or handle correctly
+            from: fromAddress,
             to,
             subject,
             [isHtml ? 'html' : 'text']: body,

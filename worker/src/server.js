@@ -27,34 +27,38 @@ export default {
    * @returns {Promise<Response>} HTTP响应对象
    */
   async fetch(request, env, ctx) {
-    // 获取数据库连接
-    let DB;
     try {
-      DB = await getInitializedDatabase(env);
-    } catch (error) {
-      console.error('数据库连接失败:', error.message);
-      return new Response('数据库连接失败，请检查配置', { status: 500 });
+      // 获取数据库连接
+      let DB;
+      try {
+        DB = await getInitializedDatabase(env);
+      } catch (error) {
+        console.error('数据库连接失败:', error.message);
+        return new Response('数据库连接失败，请检查配置', { status: 500 });
+      }
+
+      // 解析邮件域名
+      const MAIL_DOMAINS = (env.MAIL_DOMAIN || 'temp.example.com')
+        .split(/[,\s]+/)
+        .map(d => d.trim())
+        .filter(Boolean);
+
+      // 创建路由器并添加认证中间件
+      const router = createRouter();
+      router.use(authMiddleware);
+
+      // 尝试使用路由器处理请求
+      const routeResponse = await router.handle(request, { request, env, ctx });
+      if (routeResponse) {
+        return routeResponse;
+      }
+
+      // 使用资源管理器处理静态资源请求
+      const assetManager = createAssetManager();
+      return await assetManager.handleAssetRequest(request, env, MAIL_DOMAINS);
+    } catch (e) {
+      return new Response(`Worker Error: ${e.message}\n${e.stack}`, { status: 500 });
     }
-
-    // 解析邮件域名
-    const MAIL_DOMAINS = (env.MAIL_DOMAIN || 'temp.example.com')
-      .split(/[,\s]+/)
-      .map(d => d.trim())
-      .filter(Boolean);
-
-    // 创建路由器并添加认证中间件
-    const router = createRouter();
-    router.use(authMiddleware);
-
-    // 尝试使用路由器处理请求
-    const routeResponse = await router.handle(request, { request, env, ctx });
-    if (routeResponse) {
-      return routeResponse;
-    }
-
-    // 使用资源管理器处理静态资源请求
-    const assetManager = createAssetManager();
-    return await assetManager.handleAssetRequest(request, env, MAIL_DOMAINS);
   },
 
   /**

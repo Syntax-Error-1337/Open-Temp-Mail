@@ -15,14 +15,25 @@ export async function apiFetch<T = unknown>(
     };
 
     const response = await fetch(endpoint, {
+        credentials: 'include',
         ...options,
         headers,
     });
 
-    const data = await response.json().catch(() => ({}));
+    const text = await response.text();
+    let data: any;
+    try {
+        data = JSON.parse(text);
+    } catch {
+        // If not JSON, use text as message
+        data = { message: text };
+    }
 
     if (!response.ok) {
-        throw new Error(data.message || response.statusText || 'API Error');
+        const error: any = new Error(data.message || response.statusText || `API Error: ${response.status}`);
+        error.status = response.status;
+        error.statusText = response.statusText;
+        throw error;
     }
 
     return data as T;

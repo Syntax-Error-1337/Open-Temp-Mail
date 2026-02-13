@@ -9,6 +9,7 @@ interface User {
     mailbox_limit?: number;
     id?: number;
     userId?: number;
+    mailDomain?: string;
 }
 
 interface AuthContextType {
@@ -29,12 +30,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         try {
             const data = await apiFetch<User>('/api/session');
             if (data && data.role) {
+                console.log('Session check success:', data);
                 setUser(data);
             } else {
+                console.warn('Session check returned invalid data:', data);
                 setUser(null);
             }
-        } catch {
-            setUser(null);
+        } catch (error: any) {
+            // 401 Unauthorized is expected if not logged in
+            if (error.status === 401) {
+                setUser(null);
+            } else {
+                console.error('Session check failed:', error);
+                setUser(null);
+            }
         } finally {
             setIsLoading(false);
         }

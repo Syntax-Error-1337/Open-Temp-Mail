@@ -88,11 +88,13 @@ export function buildSessionCookie(token, reqUrl = '', expireDays = DEFAULT_SESS
     const u = new URL(reqUrl || 'http://localhost/');
     const isHttps = (u.protocol === 'https:');
     const secureFlag = isHttps ? ' Secure;' : '';
-    return `${COOKIE_NAME}=${token}; HttpOnly;${secureFlag} Path=/; SameSite=Strict; Max-Age=${maxAge}`;
+    return `${COOKIE_NAME}=${token}; HttpOnly;${secureFlag} Path=/; SameSite=Lax; Max-Age=${maxAge}`;
   } catch (_) {
-    return `${COOKIE_NAME}=${token}; HttpOnly; Path=/; SameSite=Strict; Max-Age=${maxAge}`;
+    return `${COOKIE_NAME}=${token}; HttpOnly; Path=/; SameSite=Lax; Max-Age=${maxAge}`;
   }
 }
+
+// ... existing code ...
 
 /**
  * 验证邮箱登录
@@ -287,18 +289,32 @@ export async function authMiddleware(context) {
     return null;
   }
 
-  const JWT_TOKEN = env.JWT_TOKEN || env.JWT_SECRET || '';
-  const root = checkRootAdminOverride(request, JWT_TOKEN);
-  if (root) {
-    context.authPayload = root;
+  try {
+    const JWT_TOKEN = env.JWT_TOKEN || env.JWT_SECRET || '';
+    if (!JWT_TOKEN) {
+      console.warn('Authentication skipped: No JWT_TOKEN configured');
+      // decide if we should block or allow (as guest?) - for now let's block to be safe
+       return new Response('Server Configuration Error: Missing Authorization Token', { status: 500 });
+    }
+
+    const root = checkRootAdminOverride(request, JWT_TOKEN);
+    if (root) {
+      context.authPayload = root;
+      return null;
+    }
+
+    const cookieHeader = request.headers.get('Cookie') || '';
+    const payload = await verifyJwtWithCache(JWT_TOKEN, cookieHeader);
+    
+    if (!payload) {
+      // console.log('Auth failed. Cookie present:', !!cookieHeader); // Debug log
+      return new Response('Unauthorized', { status: 401 });
+    }
+
+    context.authPayload = payload;
     return null;
+  } catch (error) {
+    console.error('Auth Middleware Error:', error);
+    return new Response('Internal Authentication Error', { status: 500 });
   }
-
-  const payload = await verifyJwtWithCache(JWT_TOKEN, request.headers.get('Cookie') || '');
-  if (!payload) {
-    return new Response('Unauthorized', { status: 401 });
-  }
-
-  context.authPayload = payload;
-  return null;
 }
