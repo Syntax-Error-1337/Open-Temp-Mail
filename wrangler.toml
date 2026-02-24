@@ -23,6 +23,7 @@ binding = "ASSETS"
 [[r2_buckets]]
 binding = "MAIL_EML"
 bucket_name = "mail-eml"
+preview_bucket_name = "mail-eml"
 
 # Observability
 # [observability.logs]

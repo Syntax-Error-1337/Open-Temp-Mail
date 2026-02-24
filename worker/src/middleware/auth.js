@@ -86,7 +86,14 @@ export function buildSessionCookie(token, reqUrl = '', expireDays = DEFAULT_SESS
   const maxAge = getSessionExpireSeconds(expireDays);
   try {
     const u = new URL(reqUrl || 'http://localhost/');
-    const isHttps = (u.protocol === 'https:');
+    let isHttps = (u.protocol === 'https:');
+    
+    // In local development, depending on proxy routing, we might see https or an IP.
+    // Ensure we don't set Secure if testing on localhost to avoid silent browser drops.
+    if (u.hostname === 'localhost' || u.hostname === '127.0.0.1') {
+      isHttps = false; 
+    }
+    
     const secureFlag = isHttps ? ' Secure;' : '';
     return `${COOKIE_NAME}=${token}; HttpOnly;${secureFlag} Path=/; SameSite=Lax; Max-Age=${maxAge}`;
   } catch (_) {
@@ -307,8 +314,20 @@ export async function authMiddleware(context) {
     const payload = await verifyJwtWithCache(JWT_TOKEN, cookieHeader);
     
     if (!payload) {
-      // console.log('Auth failed. Cookie present:', !!cookieHeader); // Debug log
-      return new Response('Unauthorized', { status: 401 });
+      return new Response(JSON.stringify({
+        error: 'Unauthorized',
+        debug: {
+          hasCookie: !!cookieHeader,
+          cookieStart: cookieHeader ? cookieHeader.substring(0, 30) + '...' : 'none',
+          jwtConfigured: !!JWT_TOKEN,
+          hasCache: !!globalThis.__JWT_CACHE__,
+        }
+      }), { 
+        status: 401, 
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
     }
 
     context.authPayload = payload;

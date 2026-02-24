@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,6 +12,7 @@ export default function Login() {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const navigate = useNavigate();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -18,6 +20,7 @@ export default function Login() {
         try {
             await login({ username, password });
             toast.success('Login successful');
+            navigate('/dashboard', { replace: true });
         } catch (error) {
             const msg = error instanceof Error ? error.message : 'Login failed';
             toast.error(msg);
