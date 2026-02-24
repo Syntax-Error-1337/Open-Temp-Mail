@@ -21,7 +21,7 @@ export async function apiFetch<T = unknown>(
     });
 
     const text = await response.text();
-    let data: any;
+    let data: unknown;
     try {
         data = JSON.parse(text);
     } catch {
@@ -30,7 +30,8 @@ export async function apiFetch<T = unknown>(
     }
 
     if (!response.ok) {
-        const error: any = new Error(data.message || response.statusText || `API Error: ${response.status}`);
+        const payload = data as Record<string, unknown>;
+        const error = new Error((payload?.message as string) || response.statusText || `API Error: ${response.status}`) as Error & { status?: number, statusText?: string };
         error.status = response.status;
         error.statusText = response.statusText;
         throw error;

@@ -66,7 +66,7 @@ async function main() {
     // 2. Install dependencies
     step('Installing dependencies...');
     try {
-        run('npm install', { stdio: 'inherit' });
+        run('npm install --legacy-peer-deps', { stdio: 'inherit' });
         success('Dependencies installed.');
     } catch (e) {
         error('Failed to install dependencies.');
