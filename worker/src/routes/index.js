@@ -171,7 +171,13 @@ export function createRouter() {
       response.mailboxAddress = authPayload.mailboxAddress;
     }
 
-    return Response.json(response);
+    return new Response(JSON.stringify(response), {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json',
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate'
+      }
+    });
   });
 
   // =================== API路由委托 ===================

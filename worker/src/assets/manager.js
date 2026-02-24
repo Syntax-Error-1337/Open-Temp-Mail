@@ -66,9 +66,8 @@ export class AssetManager {
     
     // Allow .html files to fall through to specific handlers or asset fetch
     // But map SPA routes to index.html
-
     if (pathname === '/admin.html' || pathname === '/admin') {
-      return await this.handleAdminPage(this.handlePathMapping(request, url), env, JWT_TOKEN);
+      return await this.handleAdminPage(mappedRequest, env, JWT_TOKEN);
     }
 
     if (pathname === '/mailbox.html' || pathname === '/html/mailbox.html') {
@@ -169,7 +168,11 @@ export class AssetManager {
   handlePathMapping(request, url) {
     let targetUrl = url.toString();
 
-    // Mapping logic for specific legacy/static references
+    const spaRoutes = ['/login', '/dashboard', '/mailbox', '/compose', '/sent', '/settings'];
+    if (spaRoutes.includes(url.pathname)) {
+      // SPA route: serve index.html
+      targetUrl = new URL('/index.html', url).toString();
+    }
     if (url.pathname === '/admin') {
       targetUrl = new URL('/html/admin.html', url).toString();
     }

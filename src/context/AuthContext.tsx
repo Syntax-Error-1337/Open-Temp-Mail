@@ -35,14 +35,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             } else {
                 setUser(null);
             }
-        } catch (error: any) {
-            // 401 Unauthorized is expected if not logged in
-            if (error.status === 401) {
-                setUser(null);
-            } else {
-                console.error('Session check failed:', error);
-                setUser(null);
-            }
         } finally {
             setIsLoading(false);
         }

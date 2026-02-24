@@ -15,7 +15,11 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-export default function Layout() {
+interface LayoutProps {
+    children?: React.ReactNode;
+}
+
+export default function Layout({ children }: LayoutProps) {
     const { user, logout } = useAuth();
     const [isSidebarOpen, setSidebarOpen] = useState(false);
     const toggleSidebar = () => setSidebarOpen(!isSidebarOpen);
@@ -100,7 +104,7 @@ export default function Layout() {
                 </header>
 
                 <div className="flex-1">
-                    <Outlet />
+                    {children || <Outlet />}
                 </div>
             </main>
         </div>
